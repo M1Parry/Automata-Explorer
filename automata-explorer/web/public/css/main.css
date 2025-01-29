@@ -1,0 +1,34 @@
+#main {
+    overflow:auto;
+}
+
+.sidebar-container {
+    display: flex;
+    float: left;
+    min-height: calc(100vh - 140px);
+}
+
+.sidebar {
+    width: 280px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    transition: all 0.3s;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        height: 100%;
+        z-index: 1000;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+}
