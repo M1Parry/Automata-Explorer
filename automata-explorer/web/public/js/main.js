@@ -6,14 +6,39 @@ document.getElementById('closeSidebar').addEventListener('click', function () {
     document.getElementById('problemSidebar').classList.remove('active');
 });
 
-function sendPostRequest(url, data) {
-    return fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    });
+function loadProblems() {
+    fetch('/main/problems')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const problems = data.problems;
+            const dfaProblems = problems.filter(problem => problem.type === 'DFA');
+            const nfaProblems = problems.filter(problem => problem.type === 'NFA');
+
+            let dfaHtml = dfaProblems.map(problem => `
+                <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}</a>
+            `).join('');
+
+            let nfaHtml = nfaProblems.map(problem => `
+                <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}</a>
+            `).join('');
+
+            document.getElementById('dfaProblemList').innerHTML = dfaHtml;
+            document.getElementById('nfaProblemList').innerHTML = nfaHtml;
+
+            document.querySelectorAll('.list-group-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    let problemId = item.href.split('/').pop();
+                    loadProblemEditor(problemId);
+                });
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to load problems');
+    })
 }
 
 function createWithAI() {
@@ -190,6 +215,7 @@ function updateProblem(problemId) {
     .then(data => {
         if (data.success) {
             alert('Problem updated successfully');
+            loadProblems();
         } else {
             alert('Failed to update problem');
         }
@@ -225,3 +251,8 @@ function updateUrl(urlPath) {
     let html = document.getElementById('editProblem').innerHTML;
     window.history.pushState({"html":html},"", urlPath);
 }
+
+// on page load event, load problems
+document.addEventListener('DOMContentLoaded', function() {
+    loadProblems();
+});

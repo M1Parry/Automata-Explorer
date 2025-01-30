@@ -14,10 +14,12 @@ function isTeacher(req, res, next) {
 
 router.get('/', (req, res) => {
     // for testing only
+    let teacherid = '678773aca785c93a0dfb4958'
+    let studentid = '67877374a785c93a0dfb4955'
     req.session.user = {
-        id: '678773aca785c93a0dfb4958',
+        id: studentid,
         username: 'teacher1',
-        userType: 'teacher',
+        userType: 'student',
         university: '67877331a785c93a0dfb494f',
         isAdmin: false
     };
@@ -27,6 +29,17 @@ router.get('/', (req, res) => {
     } else {
         res.sendFile(path.join(__dirname, '../public/html/student.html'));
     }
+});
+
+router.get('/problems', (req, res) => {
+    Problem.find({ university: req.session.user.university, enabled: true })
+        .then(problems => {
+            res.json({ success: true, problems });
+        })
+        .catch(err => {
+            console.error('Problems fetch error:', err);
+            res.status(500).json({ success: false, message: 'Internal server error' });
+        });
 });
 
 
