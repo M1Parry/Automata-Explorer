@@ -41,6 +41,11 @@ const problemSchema = new mongoose.Schema({
             message: 'Deadline must be after creation date'
         }
     },
+    difficulty: {
+        type: String,
+        required: false,
+        enum: ['easy', 'medium', 'hard']
+    },
     enabled: {
         type: Boolean,
         default: true

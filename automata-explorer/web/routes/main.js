@@ -5,7 +5,6 @@ const User = require('../models/user');
 const Problem = require('../models/problem');
 
 function isTeacher(req, res, next) {
-    // for testing
     if (req.session.user.userType === 'teacher') {
         next();
     } else {
@@ -32,11 +31,55 @@ router.get('/', (req, res) => {
 
 
 // Edit problem
-router.get('/problem/edit/:id', isTeacher, (req, res) => {
+router.get('/problem/update/:id', isTeacher, async (req, res) => {
     const { id } = req.params;
-    Problem.findById(id);
+    let problem = await Problem.findById(id);
+
+    if (!problem) {
+        return res.status(404).json({ success: false, message: 'Problem not found' });
+    }
+
+    let problem_data = {
+        id: problem.id,
+        title: problem.title,
+        description: problem.description,
+        type: problem.type,
+        deadline: problem.deadline,
+        difficulty: problem.difficulty,
+        enabled: problem.enabled
+    }
+
+    res.json({ success: true, problem: problem_data });
 });
 
+router.post('/problem/update/:id', isTeacher, (req, res) => {
+    const { id } = req.params;
+    const { title, description, type, difficulty, deadline, enabled } = req.body;
+
+    // Validate input
+    if (!title || !description || !type || !difficulty || !deadline || !enabled) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    Problem.findByIdAndUpdate(id, {
+        title,
+        description,
+        type,
+        difficulty,
+        deadline,
+        enabled
+    }, { new: true })
+        .then(problem => {
+            if (!problem) {
+                return res.status(404).json({ success: false, message: 'Problem not found' });
+            }
+            res.json({ success: true, message: 'Problem updated', problem });
+        })
+        .catch(err => {
+            console.error('Problem update error:', err);
+            res.status(500).json({ success: false, message: 'Internal server error' });
+        });
+});
 
 // Create problem
 router.post('/problem/create', isTeacher, (req, res) => {
@@ -63,5 +106,23 @@ router.post('/problem/create', isTeacher, (req, res) => {
             res.status(500).json({ success: false, message: 'Internal server error' });
         });
 });
+
+// Delete problem
+router.delete('/problem/delete/:id', isTeacher, (req, res) => {
+    const { id } = req.params;
+
+    Problem.findByIdAndDelete(id)
+        .then(problem => {
+            if (!problem) {
+                return res.status(404).json({ success: false, message: 'Problem not found' });
+            }
+            res.json({ success: true, message: 'Problem deleted' });
+        })
+        .catch(err => {
+            console.error('Problem deletion error:', err);
+            res.status(500).json({ success: false, message: 'Internal server error' });
+        });
+});
+
 
 module.exports = router;

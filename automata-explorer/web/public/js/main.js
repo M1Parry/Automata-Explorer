@@ -1,4 +1,3 @@
-
 document.getElementById('showSidebar').addEventListener('click', function () {
     document.getElementById('problemSidebar').classList.add('active');
 });
@@ -66,7 +65,7 @@ function createProblem() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log("data: ", data);
+                loadProblemEditor(data.problem.id);
                 form.reset();
             } else {
                 alert('Failed to create problem');
@@ -83,4 +82,146 @@ function createProblem() {
     }
 }
 
-function 
+function loadProblemEditor(problemId) {
+    const editorHtml = `
+        <div class="problem-editor p-4">
+            <h3>Edit Problem</h3>
+            <form id="editProblemForm">
+                <div class="mb-3">
+                    <label for="editTitle" class="form-label">Problem Title</label>
+                    <input type="text" class="form-control" id="editTitle" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="editDescription" class="form-label">Description</label>
+                    <textarea class="form-control" id="editDescription" rows="4" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="editType" class="form-label">Problem Type</label>
+                    <select class="form-control" id="editType" required>
+                        <option value="DFA">DFA</option>
+                        <option value="NFA">NFA</option>
+                        <option value="RegEx">Regular Expression</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="editDeadline" class="form-label">Deadline</label>
+                    <input type="datetime-local" class="form-control" id="editDeadline">
+                </div>
+
+                <div class="mb-3">
+                    <label for="editDifficulty" class="form-label">Difficulty Level</label>
+                    <select class="form-control" id="editDifficulty" required>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="editStatus" class="form-label">Enabled</label>
+                    <select class="form-control" id="editStatus" required>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteProblem('${problemId}')">Delete Problem</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Load existing problem data and populate form
+    fetch(`/main/problem/update/${problemId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Failed to load problem data');
+            return;
+        }
+
+        let problem = data.problem;
+        document.getElementById('automataEditor').style.display = 'none';
+        document.getElementById('editProblem').innerHTML = editorHtml;
+
+        // Populate form with existing data
+        document.getElementById('editTitle').value = problem.title;
+        document.getElementById('editDescription').value = problem.description;
+        document.getElementById('editType').value = problem.type;
+        document.getElementById('editDeadline').value = problem.deadline ? new Date(problem.deadline).toISOString().slice(0, 16) : '';
+        document.getElementById('editDifficulty').value = problem.difficulty;
+        document.getElementById('editStatus').value = problem.enabled ? 'true' : 'false';
+
+        // Add form submission handler
+        document.getElementById('editProblemForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            updateProblem(problemId);
+        });
+    })
+    .catch(error => {
+        console.error('Error loading problem:', error);
+        alert('Failed to load problem data');
+    });
+}
+
+function updateProblem(problemId) {
+    const problemData = {
+        title: document.getElementById('editTitle').value,
+        description: document.getElementById('editDescription').value,
+        type: document.getElementById('editType').value,
+        deadline: document.getElementById('editDeadline').value,
+        difficulty: document.getElementById('editDifficulty').value,
+        enabled: document.getElementById('editStatus').value === 'true'
+    };
+
+    fetch(`/main/problem/update/${problemId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(problemData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Problem updated successfully');
+        } else {
+            alert('Failed to update problem');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update problem');
+    });
+}
+
+function deleteProblem(problemId) {
+    if (confirm('Are you sure you want to delete this problem? This action cannot be undone.')) {
+        fetch(`/main/problem/delete/${problemId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Problem deleted successfully');
+                window.location.href = '/problems'; // Redirect to problems list
+            } else {
+                alert('Failed to delete problem');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to delete problem');
+        });
+    }
+}
+
+function updateUrl(urlPath) {
+    let html = document.getElementById('editProblem').innerHTML;
+    window.history.pushState({"html":html},"", urlPath);
+}
