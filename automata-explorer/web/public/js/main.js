@@ -6,6 +6,41 @@ document.getElementById('closeSidebar').addEventListener('click', function () {
     document.getElementById('problemSidebar').classList.remove('active');
 });
 
+function loadProblem(problemId) {
+    const problemHtml = `
+        <div class="problem-view p-4">
+            <h3 id="problemTitle"></h3>
+            <p id="problemDescription"></p>
+            <div class="d-flex justify-content-between">
+                <p><strong>Type:</strong> <span id="problemType"></span></p>
+                <p><strong>Deadline:</strong> <span id="problemDeadline"></span></p>
+                <p><strong>Difficulty:</strong> <span id="problemDifficulty"></span></p>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('automataEditor').style.display = 'block';
+    const canvas = document.getElementById('graphContainer');
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+
+    document.getElementById('problemDesc').innerHTML = problemHtml;
+
+    fetch(`/main/problem/${problemId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const problem = data.problem;
+            document.getElementById('problemTitle').innerText = problem.title;
+            document.getElementById('problemDescription').innerText = problem.description;
+            document.getElementById('problemType').innerText = problem.type;
+            document.getElementById('problemDeadline').innerText = problem.deadline ? new Date(problem.deadline).toLocaleString() : 'None';
+            document.getElementById('problemDifficulty').innerText = problem.difficulty;
+        }
+    });
+}
+
 function loadProblems() {
     fetch('/main/problems')
     .then(response => response.json())
@@ -30,7 +65,7 @@ function loadProblems() {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     let problemId = item.href.split('/').pop();
-                    loadProblemEditor(problemId);
+                    loadProblem(problemId);
                 });
             });
         }

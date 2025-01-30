@@ -42,6 +42,26 @@ router.get('/problems', (req, res) => {
         });
 });
 
+router.get('/problem/:id', (req, res) => {
+    const { id } = req.params;
+
+    Problem.findById(id)
+        .then(problem => {
+            if (!problem) {
+                return res.status(404).json({ success: false, message: 'Problem not found' });
+            }
+            const problem_data = {
+                title: problem.title,
+                description: problem.description,
+                type: problem.type,
+                deadline: problem.deadline,
+                difficulty: problem.difficulty
+            };
+            res.json({ success: true, problem: problem_data });
+        });
+});
+
+
 
 // Edit problem
 router.get('/problem/update/:id', isTeacher, async (req, res) => {
