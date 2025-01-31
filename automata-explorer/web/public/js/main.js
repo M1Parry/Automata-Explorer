@@ -6,6 +6,14 @@ document.getElementById('closeSidebar').addEventListener('click', function () {
     document.getElementById('problemSidebar').classList.remove('active');
 });
 
+function updateCanvas() {
+    document.getElementById('automataEditor').style.display = 'block';
+    const canvas = document.getElementById('graphContainer');
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+}
+
 function loadProblem(problemId) {
     const problemHtml = `
         <div class="problem-view p-4">
@@ -19,13 +27,9 @@ function loadProblem(problemId) {
         </div>
     `;
 
-    document.getElementById('automataEditor').style.display = 'block';
-    const canvas = document.getElementById('graphContainer');
-    const container = canvas.parentElement;
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-
     document.getElementById('problemDesc').innerHTML = problemHtml;
+
+    updateCanvas();
 
     fetch(`/main/problem/${problemId}`)
     .then(response => response.json())
