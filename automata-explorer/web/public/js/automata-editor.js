@@ -158,7 +158,6 @@ function createTransition(clickedState) {
         transitionStart = clickedState;
         drawState(transitionStart, true);
     } else {
-        console.log("clickedState: ", clickedState);
         // Create transition
         const symbol = prompt('Enter transition symbol:', '0');
         if (symbol) {
@@ -232,10 +231,29 @@ function getParallelTransitions(transition) {
     );
 }
 
+function drawArrowHead(from, to, control) {
+    const headLen = 10;
+    const headAngle = Math.PI / 6;
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+
+    ctx.beginPath();
+    ctx.moveTo(to.x, to.y);
+    ctx.lineTo(
+        to.x - headLen * Math.cos(angle - headAngle),
+        to.y - headLen * Math.sin(angle - headAngle)
+    );
+    ctx.moveTo(to.x, to.y);
+    ctx.lineTo(
+        to.x - headLen * Math.cos(angle + headAngle),
+        to.y - headLen * Math.sin(angle + headAngle)
+    );
+    ctx.stroke();
+}
+
 function drawTransition(transition) {
     const from = transition.from;
     const to = transition.to;
-    
+
     // Handle self-loop
     if (from === to) {
         const radius = STATE_RADIUS;
@@ -252,22 +270,7 @@ function drawTransition(transition) {
         // Draw arrow head
         const arrowX = centerX + radius/2;
         const arrowY = centerY - radius * 1.5;
-        const headLen = 10;
-        const headAngle = Math.PI / 6;
-        const angle = -0.25 * Math.PI;  // Angle for the arrow head
-
-        ctx.beginPath();
-        ctx.moveTo(arrowX, arrowY);
-        ctx.lineTo(
-            arrowX - headLen * Math.cos(angle - headAngle),
-            arrowY - headLen * Math.sin(angle - headAngle)
-        );
-        ctx.moveTo(arrowX, arrowY);
-        ctx.lineTo(
-            arrowX - headLen * Math.cos(angle + headAngle),
-            arrowY - headLen * Math.sin(angle + headAngle)
-        );
-        ctx.stroke();
+        drawArrowHead({ x: centerX, y: centerY - radius }, { x: arrowX, y: arrowY });
 
         // Draw transition symbol
         ctx.font = '14px Arial';
@@ -324,21 +327,7 @@ function drawTransition(transition) {
         const arrowAngle = Math.atan2(dy, dx);
 
         // Draw arrow head
-        const headLen = 10;
-        const headAngle = Math.PI / 6;
-
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(
-            endX - headLen * Math.cos(arrowAngle - headAngle),
-            endY - headLen * Math.sin(arrowAngle - headAngle)
-        );
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(
-            endX - headLen * Math.cos(arrowAngle + headAngle),
-            endY - headLen * Math.sin(arrowAngle + headAngle)
-        );
+        drawArrowHead({ x: controlX, y: controlY }, { x: endX, y: endY });
 
         // Position text above the curve
         const textX = controlX;
@@ -360,20 +349,7 @@ function drawTransition(transition) {
         ctx.stroke();
 
         // Draw arrow head
-        const headLen = 10;
-        const headAngle = Math.PI / 6;
-        ctx.beginPath();
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(
-            endX - headLen * Math.cos(angle - headAngle),
-            endY - headLen * Math.sin(angle - headAngle)
-        );
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(
-            endX - headLen * Math.cos(angle + headAngle),
-            endY - headLen * Math.sin(angle + headAngle)
-        );
-        ctx.stroke();
+        drawArrowHead({ x: startX, y: startY }, { x: endX, y: endY });
 
         // Draw transition symbol
         const textX = (startX + endX) / 2;
