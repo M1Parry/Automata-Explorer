@@ -260,16 +260,16 @@ function drawTransition(transition) {
         const centerX = from.x;
         const centerY = from.y;
 
-        // Draw loop above the state
         ctx.beginPath();
-        ctx.arc(centerX, centerY - radius, radius/1.5, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.arc(centerX, centerY - radius * 1.5, radius, 0.5 * Math.PI, 2.2 * Math.PI);
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.stroke();
 
         // Draw arrow head
-        const arrowX = centerX + radius/2;
-        const arrowY = centerY - radius * 1.5;
+        // TODO: Fix arrow head
+        const arrowX = centerX - radius * Math.cos(0.5 * Math.PI);
+        const arrowY = centerY - radius * Math.sin(0.5 * Math.PI);
         drawArrowHead({ x: centerX, y: centerY - radius }, { x: arrowX, y: arrowY });
 
         // Draw transition symbol
