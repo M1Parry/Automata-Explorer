@@ -231,7 +231,7 @@ function getParallelTransitions(transition) {
     );
 }
 
-function drawArrowHead(from, to, control) {
+function drawArrowHead(from, to) {
     const headLen = 10;
     const headAngle = Math.PI / 6;
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
