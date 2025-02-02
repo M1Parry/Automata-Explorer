@@ -261,7 +261,7 @@ function drawTransition(transition) {
         const centerY = from.y;
 
         ctx.beginPath();
-        ctx.arc(centerX, centerY - radius * 1.5, radius, 0.5 * Math.PI, 2.2 * Math.PI);
+        ctx.arc(centerX, centerY - radius * 1.5, radius-8, 0.5 * Math.PI, 2.3 * Math.PI);
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.stroke();
