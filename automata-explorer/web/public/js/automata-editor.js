@@ -231,11 +231,8 @@ function getParallelTransitions(transition) {
     );
 }
 
-function drawArrowHead(from, to) {
-    const headLen = 10;
-    const headAngle = Math.PI / 6;
+function drawArrowHead(from, to, headLen = 10, headAngle = Math.PI / 6) {
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
-
     ctx.beginPath();
     ctx.moveTo(to.x, to.y);
     ctx.lineTo(
@@ -256,29 +253,49 @@ function drawTransition(transition) {
 
     // Handle self-loop
     if (from === to) {
-        const radius = STATE_RADIUS;
         const centerX = from.x;
         const centerY = from.y;
+        const loopRadius = STATE_RADIUS * 1.5;
+        const startAngle = -Math.PI / 2; // Top of the circle
+        const endAngle = startAngle + 1.8 * Math.PI; // Almost complete loop
 
+        // Draw self-loop arc
         ctx.beginPath();
-        ctx.arc(centerX, centerY - radius * 1.5, radius-8, 0.5 * Math.PI, 2.3 * Math.PI);
+        ctx.arc(
+            centerX,
+            centerY - loopRadius,
+            loopRadius,
+            startAngle,
+            endAngle
+        );
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.stroke();
 
+        // Calculate arrow head position and angle
+        const arrowAngle = startAngle + (endAngle - startAngle) / 2;
+        const arrowX = centerX + loopRadius * Math.cos(arrowAngle);
+        const arrowY = centerY - loopRadius + loopRadius * Math.sin(arrowAngle);
+
         // Draw arrow head
-        // TODO: Fix arrow head
-        const arrowX = centerX - radius * Math.cos(0.5 * Math.PI);
-        const arrowY = centerY - radius * Math.sin(0.5 * Math.PI);
-        drawArrowHead({ x: centerX, y: centerY - radius }, { x: arrowX, y: arrowY });
+        drawArrowHead(
+            {
+                x: centerX + loopRadius * Math.cos(arrowAngle - 0.1),
+                y: centerY - loopRadius + loopRadius * Math.sin(arrowAngle - 0.1)
+            },
+            { x: arrowX, y: arrowY }
+        );
 
         // Draw transition symbol
         ctx.font = '14px Arial';
         ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(transition.symbol, centerX, centerY - radius * 2);
-
+        ctx.fillText(
+            transition.symbol,
+            centerX,
+            centerY - loopRadius * 1.5
+        );
         return;
     }
 
@@ -513,11 +530,11 @@ async function saveAutomata() {
             },
             body: JSON.stringify(data)
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to save automata');
         }
-        
+
         const result = await response.json();
         console.log('Automata saved successfully:', result);
     } catch (error) {
