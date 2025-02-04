@@ -255,47 +255,33 @@ function drawTransition(transition) {
     if (from === to) {
         const centerX = from.x;
         const centerY = from.y;
-        const loopRadius = STATE_RADIUS * 1.5;
-        const startAngle = -Math.PI / 2; // Top of the circle
-        const endAngle = startAngle + 1.8 * Math.PI; // Almost complete loop
+        const loopRadius = STATE_RADIUS
 
-        // Draw self-loop arc
+        // Draw the complete loop
         ctx.beginPath();
-        ctx.arc(
-            centerX,
-            centerY - loopRadius,
-            loopRadius,
-            startAngle,
-            endAngle
-        );
+        ctx.arc(centerX, centerY - loopRadius, loopRadius, 0, 2 * Math.PI);
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Calculate arrow head position and angle
-        const arrowAngle = startAngle + (endAngle - startAngle) / 2;
+        // Calculate arrow head position
+        const arrowAngle = 6.8;
         const arrowX = centerX + loopRadius * Math.cos(arrowAngle);
-        const arrowY = centerY - loopRadius + loopRadius * Math.sin(arrowAngle);
+        const arrowY = (centerY - loopRadius) + loopRadius * Math.sin(arrowAngle);
+
+        // Calculate a point slightly before the arrow head for proper tangent
+        const fromX = centerX + loopRadius * Math.cos(arrowAngle - 0.1);
+        const fromY = (centerY - loopRadius) + loopRadius * Math.sin(arrowAngle - 0.1);
 
         // Draw arrow head
-        drawArrowHead(
-            {
-                x: centerX + loopRadius * Math.cos(arrowAngle - 0.1),
-                y: centerY - loopRadius + loopRadius * Math.sin(arrowAngle - 0.1)
-            },
-            { x: arrowX, y: arrowY }
-        );
+        drawArrowHead({x: fromX, y: fromY}, {x: arrowX, y: arrowY});
 
         // Draw transition symbol
         ctx.font = '14px Arial';
         ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(
-            transition.symbol,
-            centerX,
-            centerY - loopRadius * 1.5
-        );
+        ctx.fillText( transition.symbol, centerX, centerY - loopRadius * 2.5);
         return;
     }
 
