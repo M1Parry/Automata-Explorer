@@ -321,9 +321,6 @@ function drawTransition(transition) {
         ctx.moveTo(startX, startY);
         ctx.quadraticCurveTo(controlX, controlY, endX, endY);
 
-        // Store control point for arrow and text positioning
-        transition.controlPoint = { x: controlX, y: controlY };
-
         // Calculate arrow angle at the end of the curve
         const dx = endX - controlX;
         const dy = endY - controlY;
