@@ -354,20 +354,31 @@ function drawTransition(transition) {
     }
 }
 
+function updateStateReferences() {
+    states.forEach((state, index) => {
+        state.id = index;
+        state.label = `q${index}`;
+    });
+
+    stateCounter = states.length;
+
+    transitions.forEach(transition => {
+        if (!states.includes(transition.from) || !states.includes(transition.to)) {
+            const index = transitions.indexOf(transition);
+            if (index > -1) {
+                transitions.splice(index, 1);
+            }
+        }
+    });
+}
+
 function deleteState(state) {
     const index = states.indexOf(state);
     if (index > -1) {
         states.splice(index, 1);
+        updateStateReferences();
+        drawCanvas();
     }
-    drawCanvas();
-}
-
-function deleteTransition(transition) {
-    const index = transitions.indexOf(transition);
-    if (index > -1) {
-        transitions.splice(index, 1);
-    }
-    drawCanvas();
 }
 
 // Draw all states and transitions
