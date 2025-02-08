@@ -327,7 +327,7 @@ function drawTransition(transition) {
 
         // Position text above the curve
         const textX = controlX;
-        const textY = controlY - 15;
+        const textY = controlY;
         ctx.stroke();
 
         // Draw transition symbol
