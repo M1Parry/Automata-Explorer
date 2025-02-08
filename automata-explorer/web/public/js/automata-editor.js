@@ -281,7 +281,7 @@ function drawTransition(transition) {
         ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText( transition.symbol, centerX, centerY - loopRadius * 2.5);
+        ctx.fillText(transition.symbol, centerX, centerY - loopRadius * 2.5);
         return;
     }
 
@@ -320,11 +320,7 @@ function drawTransition(transition) {
         // Draw curved path
         ctx.moveTo(startX, startY);
         ctx.quadraticCurveTo(controlX, controlY, endX, endY);
-
-        // Calculate arrow angle at the end of the curve
-        const dx = endX - controlX;
-        const dy = endY - controlY;
-        const arrowAngle = Math.atan2(dy, dx);
+        ctx.stroke();
 
         // Draw arrow head
         drawArrowHead({ x: controlX, y: controlY }, { x: endX, y: endY });
