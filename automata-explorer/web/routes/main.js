@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const User = require('../models/user');
 const Problem = require('../models/problem');
+const Answer = require('../models/answer');
 
 function isTeacher(req, res, next) {
     if (req.session.user.userType === 'teacher') {
@@ -157,5 +158,34 @@ router.delete('/problem/delete/:id', isTeacher, (req, res) => {
         });
 });
 
+// Save answer
+router.post('/answer/save/:id', async (req, res) => {
+    const userId = req.session.user.id;
+    const problemId = req.params.id;
+    const { states, transitions } = req.body;
+
+    let answer = await Answer.findOne({ problemId, userId });
+
+    if (answer) {
+        answer.states = states;
+        answer.transitions = transitions;
+        answer.attempts += 1;
+        await answer.save();
+    } else {
+        answer = new Answer({
+            problemId,
+            userId,
+            states,
+            transitions
+        });
+        await answer.save();
+    }
+
+    res.json({
+        success: true,
+        message: 'Answer saved successfully',
+        answerId: answer._id
+    });
+});
 
 module.exports = router;

@@ -509,7 +509,9 @@ function serializeAutomata() {
 async function saveAutomata() {
     try {
         const data = serializeAutomata();
-        const response = await fetch('/api/automata/save', {
+        const problemId = document.getElementById('problem').dataset.id;
+
+        const response = await fetch(`/main/answer/save/${problemId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -520,10 +522,8 @@ async function saveAutomata() {
         if (!response.ok) {
             throw new Error('Failed to save automata');
         }
-
-        const result = await response.json();
-        console.log('Automata saved successfully:', result);
+        alert('Your answer has been saved successfully!');
     } catch (error) {
-        console.error('Error saving automata:', error);
+        alert('Failed to save your answer. Please try again.');
     }
 }

@@ -16,7 +16,7 @@ function updateCanvas() {
 
 function loadProblem(problemId) {
     const problemHtml = `
-        <div class="problem-view p-4">
+        <div class="problem-view p-4" id="problem" data-id="${problemId}">
             <h3 id="problemTitle"></h3>
             <p id="problemDescription"></p>
             <div class="d-flex justify-content-between">

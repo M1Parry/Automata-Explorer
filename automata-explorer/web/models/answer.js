@@ -40,7 +40,6 @@ const answerSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index to efficiently find answers by user and problem
 answerSchema.index({ userId: 1, problemId: 1 });
 
 module.exports = mongoose.model('Answer', answerSchema);
