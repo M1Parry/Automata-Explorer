@@ -247,6 +247,14 @@ function drawArrowHead(from, to, headLen = 10, headAngle = Math.PI / 6) {
     ctx.stroke();
 }
 
+function drawTransitionSymbol(symbol, x, y) {
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(symbol, x, y);
+}
+
 function drawTransition(transition) {
     const from = transition.from;
     const to = transition.to;
@@ -277,11 +285,7 @@ function drawTransition(transition) {
         drawArrowHead({x: fromX, y: fromY}, {x: arrowX, y: arrowY});
 
         // Draw transition symbol
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#000';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(transition.symbol, centerX, centerY - loopRadius * 2.5);
+        drawTransitionSymbol(transition.symbol, centerX, centerY - loopRadius * 2.5);
         return;
     }
 
@@ -331,11 +335,7 @@ function drawTransition(transition) {
         ctx.stroke();
 
         // Draw transition symbol
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#000';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(transition.symbol, textX, textY);
+        drawTransitionSymbol(transition.symbol, controlX, controlY);
     }
 
     else {
@@ -350,11 +350,7 @@ function drawTransition(transition) {
         // Draw transition symbol
         const textX = (startX + endX) / 2;
         const textY = (startY + endY) / 2 - 10;
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#000';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(transition.symbol, textX, textY);
+        drawTransitionSymbol(transition.symbol, textX, textY);
     }
 }
 
