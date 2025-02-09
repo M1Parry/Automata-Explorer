@@ -124,7 +124,6 @@ function handleClick(event) {
 
     else if (isDeleteTransitionMode) {
         const clickedTransition = getTransitionAtPosition(x, y);
-        console
         if (clickedTransition) {
             deleteTransition(clickedTransition);
         }
@@ -381,6 +380,14 @@ function deleteState(state) {
     }
 }
 
+function deleteTransition(transition) {
+    const index = transitions.indexOf(transition);
+    if (index > -1) {
+        transitions.splice(index, 1);
+    }
+    drawCanvas();
+}
+
 // Draw all states and transitions
 function drawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -417,7 +424,6 @@ function resetButtons() {
 
 // Update canvas style to prevent text selection during drag
 canvas.style.userSelect = 'none';
-canvas.style.webkitUserSelect = 'none';
 canvas.style.mozUserSelect = 'none';
 
 // Initialize everything when the page loads
@@ -491,7 +497,7 @@ document.getElementById('clearAutomataBtn').addEventListener('click', () => {
 function serializeAutomata() {
     return {
         states: states.map(state => ({
-            _id: state.id,
+            stateId: state.id,
             label: state.label,
             x: state.x,
             y: state.y,
@@ -527,3 +533,11 @@ async function saveAutomata() {
         alert('Failed to save your answer. Please try again.');
     }
 }
+
+// Make drawCanvas available to other scripts
+window.drawCanvas = drawCanvas;
+window.states = states;
+window.transitions = transitions;
+window.stateCounter = stateCounter;
+window.State = State;
+window.Transition = Transition;

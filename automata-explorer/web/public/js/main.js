@@ -41,8 +41,41 @@ function loadProblem(problemId) {
             document.getElementById('problemType').innerText = problem.type;
             document.getElementById('problemDeadline').innerText = problem.deadline ? new Date(problem.deadline).toLocaleString() : 'None';
             document.getElementById('problemDifficulty').innerText = problem.difficulty;
+
+            // Load existing answer if available
+            if (data.answer) {
+                loadExistingAnswer(data.answer);
+            }
         }
     });
+}
+
+function loadExistingAnswer(answer) {
+    // Clear existing states and transitions
+    states.length = 0;
+    transitions.length = 0;
+    stateCounter = 0;
+
+    answer.states.forEach(stateData => {
+        const state = new State(stateData.x, stateData.y, stateData.label);
+        state.id = stateData.stateId;
+        state.isInitial = stateData.isInitial;
+        state.isFinal = stateData.isFinal;
+        states.push(state);
+    });
+
+    stateCounter = states.length;
+
+    answer.transitions.forEach(transData => {
+        const fromState = states.find(s => s.id === transData.from);
+        const toState = states.find(s => s.id === transData.to);
+        if (fromState && toState) {
+            transitions.push(new Transition(fromState, toState, transData.symbol));
+        }
+    });
+
+    // Redraw canvas with loaded data
+    drawCanvas();
 }
 
 function loadProblems() {

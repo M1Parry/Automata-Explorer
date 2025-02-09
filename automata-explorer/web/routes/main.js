@@ -43,25 +43,40 @@ router.get('/problems', (req, res) => {
         });
 });
 
-router.get('/problem/:id', (req, res) => {
+router.get('/problem/:id', async (req, res) => {
     const { id } = req.params;
+    const user = req.session.user;
 
-    Problem.findById(id)
-        .then(problem => {
-            if (!problem) {
-                return res.status(404).json({ success: false, message: 'Problem not found' });
-            }
-            const problem_data = {
-                title: problem.title,
-                description: problem.description,
-                type: problem.type,
-                deadline: problem.deadline,
-                difficulty: problem.difficulty
-            };
-            res.json({ success: true, problem: problem_data });
-        });
+    let problem = await Problem.findById(id);
+    let answer = await Answer.findOne({ problemId: id, userId: user.id });
+
+    if (!problem) {
+        return res.status(404).json({ success: false, message: 'Problem not found' });
+    }
+
+    let problem_data = {
+        id: problem.id,
+        title: problem.title,
+        description: problem.description,
+        type: problem.type,
+        deadline: problem.deadline,
+        difficulty: problem.difficulty,
+        enabled: problem.enabled
+    }
+
+    let answer_data = null;
+    if (answer) {
+        answer_data = {
+            id: answer.id,
+            states: answer.states,
+            transitions: answer.transitions,
+            isCorrect: answer.isCorrect,
+            attempts: answer.attempts
+        }
+    }
+
+    res.json({ success: true, problem: problem_data, answer: answer_data });
 });
-
 
 
 // Edit problem
