@@ -44,6 +44,8 @@ private:
 	bool is_deterministic;
 	bool contains_epsilon;
 
+	// TODO helper methods to for better code readability
+
 public:
 	Automaton()
 	{
@@ -147,10 +149,17 @@ public:
 		return true; // All transitions are valid
 	}
 
+	bool is_accepting_state(int state)
+	{
+		if (std::find(accept.begin(), accept.end(), state) != accept.end()) {
+			return true;
+		}
+		return false;
+	}
+
 	bool accepts(std::string input)
 	{
 		// Inspired by Algorithm 7 and 13 from "Automata Theory: An Algorithmic Approach" by Javier Esparza and Michael Blondin.
-
 		// dfa
 		if (is_deterministic) {
 			int current_state = start;
@@ -160,6 +169,7 @@ public:
 				}
 				current_state = dfa_transitions[current_state][symbol];
 			}
+			return is_accepting_state(current_state);
 		} else {
 			// nfa
 			std::vector<int> currentStates = {start};
@@ -178,9 +188,7 @@ public:
 			}
 
 			for (int state : currentStates) {
-				if (std::find(accept.begin(), accept.end(), state) != accept.end()) {
-					return true; // Accepting state reached
-				}
+				return is_accepting_state(state);
 			}
 		}
 		return false;
@@ -279,6 +287,12 @@ void simulate_dfa_test()
 	};
 
 	Automaton automaton(states, alphabet, start, accept);
+
+	for (auto transition : transitions) {
+		for (auto t : transition.second) {
+			automaton.add_dfa_transition(transition.first, t.first, t.second);
+		}
+	}
 
 	std::string input = "ab";
 	std::cout << "DFA on input string: " << input << ". Result: ";
