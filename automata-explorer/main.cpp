@@ -60,14 +60,6 @@ public:
 		this->start = start;
 		this->accept = accept;
 
-		Nfa_transitions transitions = {
-			{0, {{'0', {0}}, {'1', {0, 1}}}},
-			{1, {{'0', {2}}, {'1', {2}}}},
-			{2, {{'0', {3}}, {'1', {3}}}}
-		};
-
-		nfa_transitions = transitions;
-
 		is_deterministic = false;
 		contains_epsilon = false;
 	}
