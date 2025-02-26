@@ -60,7 +60,15 @@ public:
 		this->start = start;
 		this->accept = accept;
 
-		is_deterministic = true;
+		Nfa_transitions transitions = {
+			{0, {{'0', {0}}, {'1', {0, 1}}}},
+			{1, {{'0', {2}}, {'1', {2}}}},
+			{2, {{'0', {3}}, {'1', {3}}}}
+		};
+
+		nfa_transitions = transitions;
+
+		is_deterministic = false;
 		contains_epsilon = false;
 	}
 
@@ -188,7 +196,9 @@ public:
 			}
 
 			for (int state : currentStates) {
-				return is_accepting_state(state);
+				if (is_accepting_state(state)) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -338,7 +348,7 @@ void simulate_epsilon_nfa_test()
 
 int main(int argc, char *argv[])
 {
-	simulate_dfa_test();
+	// simulate_dfa_test();
 	simulate_nfa_test();
 
 	return 0;
