@@ -204,24 +204,34 @@ public:
 		return false;
 	}
 
-	Automaton nfa_to_dfa()
-	{
-		// Inspired by Algorithm 1 from "Automata Theory: An Algorithmic Approach" by Javier Esparza and Michael Blondin.
+	Automaton nfa_to_dfa() {
+		Automaton dfa;
+		dfa.alphabet = alphabet;
+		dfa.is_deterministic = true;
+		dfa.contains_epsilon = false;
+
 		std::vector<std::set<int>> dfa_states;
+		std::map<std::set<int>, int> state_to_index; // Maps NFA state sets to DFA state numbers
 		std::queue<std::set<int>> worklist;
+
 		std::set<int> start_state = {start};
 		dfa_states.push_back(start_state);
+		state_to_index[start_state] = 0;
 		worklist.push(start_state);
+		dfa.start = 0;
 
 		while (!worklist.empty()) {
 			std::set<int> current_state = worklist.front();
 			worklist.pop();
+			int current_index = state_to_index[current_state];
 
 			for (char symbol : alphabet) {
 				std::set<int> next_state;
-				for (int state : current_state) {
-					if (nfa_transitions[state].find(symbol) != nfa_transitions[state].end()) {
-						next_state.insert(nfa_transitions[state][symbol].begin(), nfa_transitions[state][symbol].end());
+				// For each NFA state in the current DFA state
+				for (int nfa_state : current_state) {
+					if (nfa_transitions[nfa_state].find(symbol) != nfa_transitions[nfa_state].end()) {
+						next_state.insert(nfa_transitions[nfa_state][symbol].begin(),
+										  nfa_transitions[nfa_state][symbol].end());
 					}
 				}
 
@@ -229,53 +239,33 @@ public:
 					continue;
 				}
 
-				if (std::find(dfa_states.begin(), dfa_states.end(), next_state) == dfa_states.end()) {
+				// If this set of states hasn’t been seen, add it
+				if (state_to_index.find(next_state) == state_to_index.end()) {
+					state_to_index[next_state] = dfa_states.size();
 					dfa_states.push_back(next_state);
 					worklist.push(next_state);
 				}
+
+				// Add transition to DFA
+				dfa.dfa_transitions[current_index][symbol] = state_to_index[next_state];
 			}
 		}
 
-		// Create DFA transitions
-		for (int i = 0; i < dfa_states.size(); i++) {
-			std::set<int> current_state = dfa_states[i];
-			for (char symbol : alphabet) {
-				std::set<int> next_state;
-				for (int state : current_state) {
-					if (nfa_transitions[state].find(symbol) != nfa_transitions[state].end()) {
-						next_state.insert(nfa_transitions[state][symbol].begin(), nfa_transitions[state][symbol].end());
-					}
-				}
-
-				if (next_state.empty()) {
-					continue;
-				}
-
-				if (std::find(dfa_states.begin(), dfa_states.end(), next_state) == dfa_states.end()) {
-					dfa_states.push_back(next_state);
-				}
-
-				Dfa_transitions new_dfa_transitions;
-				new_dfa_transitions[i][symbol] = std::find(dfa_states.begin(), dfa_states.end(), next_state) - dfa_states.begin();
-			}
-		}
-
-		Automaton dfa;
-		dfa.states = std::vector<int>(dfa_states.size());
+		// Set DFA states
+		dfa.states.resize(dfa_states.size());
 		for (int i = 0; i < dfa_states.size(); i++) {
 			dfa.states[i] = i;
 		}
-		dfa.alphabet = alphabet;
-		dfa.start = 0;
-		dfa.accept = std::vector<int>();
+
+		// Set accepting states
 		for (int i = 0; i < dfa_states.size(); i++) {
-			if (std::find(dfa_states[i].begin(), dfa_states[i].end(), accept[0]) != dfa_states[i].end()) {
-				dfa.accept.push_back(i);
+			for (int accept_state : accept) {
+				if (dfa_states[i].find(accept_state) != dfa_states[i].end()) {
+					dfa.accept.push_back(i);
+					break;
+				}
 			}
 		}
-
-		dfa.is_deterministic = true;
-		dfa.contains_epsilon = false;
 
 		return dfa;
 	}
