@@ -39,12 +39,38 @@ private:
 	std::vector<int> accept;
 	Dfa_transitions dfa_transitions;
 	Nfa_transitions nfa_transitions;
-
+	std::unordered_map<int, std::set<int>> epsilon_transitions;
 	int start;
 	bool is_deterministic;
 	bool contains_epsilon;
 
 	// TODO helper methods to for better code readability
+
+	std::set<int> epsilon_closure(const std::set<int>& state_set)
+	{
+		std::set<int> closure = state_set;
+		std::queue<int> to_explore;
+
+		for (int state : state_set) {
+			to_explore.push(state);
+		}
+
+		while (!to_explore.empty()) {
+			int state = to_explore.front();
+			to_explore.pop();
+
+			// Add all states reachable via epsilon transitions
+			if (epsilon_transitions.find(state) != epsilon_transitions.end()) {
+				for (int next_state : epsilon_transitions[state]) {
+					if (closure.insert(next_state).second) {
+						to_explore.push(next_state);
+					}
+				}
+			}
+		}
+		return closure;
+	}
+
 
 public:
 	Automaton()
@@ -59,7 +85,6 @@ public:
 		this->alphabet = alphabet;
 		this->start = start;
 		this->accept = accept;
-
 		is_deterministic = false;
 		contains_epsilon = false;
 	}
@@ -109,7 +134,6 @@ public:
 
 	void add_nfa_transition(int state, char symbol, int new_state)
 	{
-		// check if state and new_state exists, if not return error
 		if (std::find(states.begin(), states.end(), state) == states.end()) {
 			std::cerr << "State does not exist" << std::endl;
 			return;
@@ -120,19 +144,22 @@ public:
 			return;
 		}
 
-		// check if symbol exists, if not return error
 		if (std::find(alphabet.begin(), alphabet.end(), symbol) == alphabet.end()) {
 			std::cerr << "Symbol does not exist" << std::endl;
 			return;
 		}
 
-		// check if transition already exists, if so return error
-		if (nfa_transitions[state].find(symbol) != nfa_transitions[state].end()) {
-			std::cerr << "Transition already exists" << std::endl;
+		nfa_transitions[state][symbol].insert(new_state);
+	}
+
+	void add_epsilon_transition(int state, int new_state) {
+		if (std::find(states.begin(), states.end(), state) == states.end() ||
+			std::find(states.begin(), states.end(), new_state) == states.end()) {
+			std::cerr << "State does not exist" << std::endl;
 			return;
 		}
-
-		nfa_transitions[state][symbol].insert(new_state);
+		epsilon_transitions[state].insert(new_state);
+		contains_epsilon = true;
 	}
 
 	bool check_transitions()
