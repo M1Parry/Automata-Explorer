@@ -84,7 +84,7 @@ public:
 		this->alphabet = alphabet;
 		this->start = start;
 		this->accept = accept;
-		is_deterministic = false;
+		is_deterministic = true;
 		contains_epsilon = false;
 	}
 
