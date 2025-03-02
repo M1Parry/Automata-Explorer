@@ -71,7 +71,6 @@ private:
 		return closure;
 	}
 
-
 public:
 	Automaton()
 	{
@@ -198,29 +197,33 @@ public:
 			}
 			return is_accepting_state(current_state);
 		} else {
-			// nfa
-			std::vector<int> currentStates = {start};
-			std::vector<int> nextStates;
+			// NFA with possible epsilon transitions
+			std::set<int> current_states = epsilon_closure({start});
+			std::set<int> next_states;
+
 			for (char symbol : input) {
-				nextStates.clear();
-				for (int state : currentStates) {
+				next_states.clear();
+				for (int state : current_states) {
 					if (nfa_transitions[state].find(symbol) != nfa_transitions[state].end()) {
-						nextStates.insert(nextStates.end(), nfa_transitions[state][symbol].begin(), nfa_transitions[state][symbol].end());
+						for (int next : nfa_transitions[state][symbol]) {
+							next_states.insert(next);
+						}
 					}
 				}
-				if (nextStates.empty()) {
+				if (next_states.empty()) {
 					return false;
 				}
-				currentStates = nextStates;
+				// Compute epsilon closure of the next states
+				current_states = epsilon_closure(next_states);
 			}
 
-			for (int state : currentStates) {
+			for (int state : current_states) {
 				if (is_accepting_state(state)) {
 					return true;
 				}
 			}
+			return false;
 		}
-		return false;
 	}
 
 	Automaton nfa_to_dfa() {
@@ -233,7 +236,7 @@ public:
 		std::map<std::set<int>, int> state_to_index; // Maps NFA state sets to DFA state numbers
 		std::queue<std::set<int>> worklist;
 
-		std::set<int> start_state = {start};
+		std::set<int> start_state = epsilon_closure({start});
 		dfa_states.push_back(start_state);
 		state_to_index[start_state] = 0;
 		worklist.push(start_state);
@@ -258,7 +261,9 @@ public:
 					continue;
 				}
 
-				// If this set of states hasn’t been seen, add it
+				// Epsilon closure of next state
+				next_state = epsilon_closure(next_state);
+
 				if (state_to_index.find(next_state) == state_to_index.end()) {
 					state_to_index[next_state] = dfa_states.size();
 					dfa_states.push_back(next_state);
@@ -357,8 +362,8 @@ void simulate_epsilon_nfa_test()
 
 int main(int argc, char *argv[])
 {
-	// simulate_dfa_test();
-	simulate_nfa_test();
+	simulate_dfa_test();
+	// simulate_nfa_test();
 
 	return 0;
 }
