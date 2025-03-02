@@ -74,17 +74,18 @@ private:
 public:
 	Automaton()
 	{
-		is_deterministic = false;
-		contains_epsilon = false;
+		this->is_deterministic = false;
+		this->contains_epsilon = false;
 	}
 
-	Automaton(std::vector<int> states, std::vector<char> alphabet, int start, std::vector<int> accept)
+	Automaton(std::vector<int> states, std::vector<char> alphabet,
+				int start, std::vector<int> accept, bool is_deterministic)
 	{
 		this->states = states;
 		this->alphabet = alphabet;
 		this->start = start;
 		this->accept = accept;
-		is_deterministic = true;
+		this->is_deterministic = is_deterministic;
 		contains_epsilon = false;
 	}
 
@@ -310,7 +311,7 @@ void simulate_dfa_test()
 		{2, {{'a', 2}, {'b', 2}}}
 	};
 
-	Automaton automaton(states, alphabet, start, accept);
+	Automaton automaton(states, alphabet, start, accept, true);
 
 	for (auto transition : transitions) {
 		for (auto t : transition.second) {
@@ -337,7 +338,18 @@ void simulate_nfa_test()
 	};
 
 	// Accepts all strings over {0, 1} containing a 1 in the third position from the end
-	Automaton nfa(states, alphabet, start, accept);
+	Automaton nfa(states, alphabet, start, accept, false);
+
+	// add transitions
+	for (auto transition : transitions) {
+		for (auto t : transition.second) {
+			for (int state : t.second) {
+				nfa.add_nfa_transition(transition.first, t.first, state);
+			}
+		}
+	}
+
+
 
 	std::string input = "000100";
 	std::string fail = "0001000";
@@ -363,7 +375,7 @@ void simulate_epsilon_nfa_test()
 int main(int argc, char *argv[])
 {
 	simulate_dfa_test();
-	// simulate_nfa_test();
+	simulate_nfa_test();
 
 	return 0;
 }
