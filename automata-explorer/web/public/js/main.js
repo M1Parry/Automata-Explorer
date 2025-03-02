@@ -29,6 +29,7 @@ function loadProblem(problemId) {
 
     document.getElementById('problemDesc').innerHTML = problemHtml;
 
+
     updateCanvas();
 
     fetch(`/main/problem/${problemId}`)
@@ -39,6 +40,7 @@ function loadProblem(problemId) {
             document.getElementById('problemTitle').innerText = problem.title;
             document.getElementById('problemDescription').innerText = problem.description;
             document.getElementById('problemType').innerText = problem.type;
+            document.getElementById('problemType').dataset.type = problem.type;
             document.getElementById('problemDeadline').innerText = problem.deadline ? new Date(problem.deadline).toLocaleString() : 'None';
             document.getElementById('problemDifficulty').innerText = problem.difficulty;
 

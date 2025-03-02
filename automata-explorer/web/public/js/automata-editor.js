@@ -155,16 +155,24 @@ function handleMouseUp() {
 function createTransition(clickedState) {
     if (!transitionStart) {
         transitionStart = clickedState;
-        drawState(transitionStart, true);
+        drawState(transitionStart);
     } else {
         // Create transition
         const symbol = prompt('Enter transition symbol:', '0');
         if (symbol) {
             // check if transition already exists if it does remove the old one
-            const oldTransition = transitions.find(t => t.from === transitionStart && t.to === clickedState);
+            let oldTransition = transitions.find(t => t.from === transitionStart && t.to === clickedState);
 
             if (oldTransition) {
                 deleteTransition(oldTransition);
+            }
+
+            let is_deterministic = document.getElementById('problemType').dataset.type === 'DFA';
+            if (is_deterministic) {
+               oldTransition = transitions.find(t => t.from === transitionStart && t.symbol === symbol);
+                if (oldTransition) {
+                    deleteTransition(oldTransition);
+                }
             }
 
             transitions.push(new Transition(transitionStart, clickedState, symbol));
