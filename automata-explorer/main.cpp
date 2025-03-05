@@ -6,6 +6,7 @@
 #include <set>
 #include <map>
 #include <unordered_map>
+#include <stack>
 
 #define EPSILON = '\u03B5';
 
@@ -297,6 +298,85 @@ public:
 };
 
 
+class RegularExpression {
+private:
+	Automaton nfa;
+	int state_counter;
+	std::string expression;
+
+	std::unordered_map<char, int> precedence = {
+		{'|', 0},	// Union
+		{'.', 1},	// Concatenation
+		{'*', 2},	// Kleene star
+		{'+', 2},	// Plus
+		{'?', 2}	// Optional
+	};
+
+	bool is_operator(char c)
+	{
+		return precedence.find(c) != precedence.end();
+	}
+
+	int new_state() {
+		int state = state_counter++;
+		nfa.add_state(state);
+		return state;
+	}
+
+	std::string postfix_expression(const std::string& regex) {
+		std::string output;
+		std::stack<char> operators;
+
+		for (size_t i = 0; i < regex.length(); i++) {
+			char c = regex[i];
+
+			// https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
+			if (c == '(') {
+				operators.push(c);
+			}
+			else if (c == ')') {
+				while (!operators.empty() && operators.top() != '(') {
+					output += operators.top();
+					operators.pop();
+				}
+				if (!operators.empty()) operators.pop();
+			}
+			else if (is_operator(c)) {
+				while (!operators.empty() && operators.top() != '(' &&
+						precedence[operators.top()] >= precedence[c]) {
+					output += operators.top();
+					operators.pop();
+				}
+				operators.push(c);
+			}
+			else {
+				// Literal character
+				output += c;
+				// Implicit concatenation: if previous was a literal or ')', add '.'
+				if (i > 0 && (isalnum(regex[i-1]) || regex[i-1] == ')' || regex[i-1] == '*' || 
+								regex[i-1] == '+' || regex[i-1] == '?')) {
+					while (!operators.empty() && operators.top() != '(' &&
+							precedence[operators.top()] >= precedence['.']) {
+						output += operators.top();
+						operators.pop();
+					}
+					operators.push('.');
+				}
+			}
+		}
+
+		// Pop remaining operators
+		while (!operators.empty()) {
+			output += operators.top();
+			operators.pop();
+		}
+
+		return output;
+	}
+
+};
+
+
 void simulate_dfa_test()
 {
 	std::vector<char> alphabet{'a', 'b'};
@@ -349,8 +429,6 @@ void simulate_nfa_test()
 		}
 	}
 
-
-
 	std::string input = "000100";
 	std::string fail = "0001000";
 
@@ -374,8 +452,17 @@ void simulate_epsilon_nfa_test()
 
 int main(int argc, char *argv[])
 {
-	simulate_dfa_test();
-	simulate_nfa_test();
+	// simulate_dfa_test();
+	// simulate_nfa_test();
+
+	std::string regex = "(a|b)*abb";
+
+	RegularExpression re;
+	std::string postfix = re.postfix_expression(regex);
+
+	std::cout << "Postfix expression: " << postfix << std::endl;
+
+
 
 	return 0;
 }
