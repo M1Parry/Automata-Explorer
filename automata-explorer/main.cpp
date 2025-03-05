@@ -374,6 +374,28 @@ private:
 		return output;
 	}
 
+public:
+	RegularExpression(const std::string& regex) {
+		state_counter = 0;
+		expression = postfix_expression(regex);
+	}
+
+	bool accepts(const std::string& input) {
+		return nfa.accepts(input);
+	}
+
+	Automaton get_nfa() {
+		return nfa;
+	}
+
+	Automaton get_dfa() {
+		return nfa.nfa_to_dfa();
+	}
+
+	std::string postfix_expression() {
+		return expression;
+	}
+
 };
 
 
