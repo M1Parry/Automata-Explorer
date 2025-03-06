@@ -90,6 +90,11 @@ public:
 		contains_epsilon = false;
 	}
 
+	void set_start(int state)
+	{
+		start = state;
+	}
+
 	void add_state(int state)
 	{
 		states.push_back(state);
@@ -97,7 +102,9 @@ public:
 
 	void add_alphabet(char symbol)
 	{
-		alphabet.push_back(symbol);
+		if (std::find(alphabet.begin(), alphabet.end(), symbol) == alphabet.end()) {
+			alphabet.push_back(symbol);
+		}
 	}
 
 	void add_accept(int state)
@@ -374,10 +381,83 @@ private:
 		return output;
 	}
 
+	void build_nfa(const std::string& regex) {
+		// Inspired by https://swtch.com/~rsc/regexp/regexp1.html
+		std::stack<std::pair<int, int>> frag;
+
+		for (char c : regex) {
+			if (is_operator(c)) {
+				if (c == '.') {
+					// Concatenation
+					auto f2 = frag.top(); frag.pop();
+					auto f1 = frag.top(); frag.pop();
+					nfa.add_epsilon_transition(f1.second, f2.first);
+					frag.push({f1.first, f2.second});
+				}
+				else if (c == '|') {
+					// Union
+					auto f2 = frag.top(); frag.pop();
+					auto f1 = frag.top(); frag.pop();
+					int start = new_state();
+					int end = new_state();
+					nfa.add_epsilon_transition(start, f1.first);
+					nfa.add_epsilon_transition(start, f2.first);
+					nfa.add_epsilon_transition(f1.second, end);
+					nfa.add_epsilon_transition(f2.second, end);
+					frag.push({start, end});
+				}
+				else if (c == '*') {
+					// Kleene star (zero or more)
+					auto f = frag.top(); frag.pop();
+					int start = new_state();
+					int end = new_state();
+					nfa.add_epsilon_transition(start, f.first);
+					nfa.add_epsilon_transition(f.second, end);
+					nfa.add_epsilon_transition(f.second, f.first);
+					nfa.add_epsilon_transition(start, end);
+					frag.push({start, end});
+				}
+				else if (c == '+') {
+					// Plus (one or more)
+					auto f = frag.top(); frag.pop();
+					int start = new_state();
+					int end = new_state();
+					nfa.add_epsilon_transition(start, f.first);
+					nfa.add_epsilon_transition(f.second, end);
+					nfa.add_epsilon_transition(f.second, f.first);
+					frag.push({start, end});
+				}
+				else if (c == '?') {
+					// Optional (zero or one)
+					auto f = frag.top(); frag.pop();
+					int start = new_state();
+					int end = new_state();
+					nfa.add_epsilon_transition(start, f.first);
+					nfa.add_epsilon_transition(f.second, end);
+					nfa.add_epsilon_transition(start, end);
+					frag.push({start, end});
+				}
+			}
+			// literal character
+			else {
+				int start = new_state();
+				int end = new_state();
+				nfa.add_alphabet(c);
+				nfa.add_nfa_transition(start, c, end);
+				frag.push({start, end});
+			}
+		}
+
+		auto final = frag.top(); frag.pop();
+		nfa.add_accept(final.second);
+		nfa.set_start(final.first);
+	}
+
 public:
 	RegularExpression(const std::string& regex) {
 		state_counter = 0;
 		expression = postfix_expression(regex);
+		build_nfa(expression);
 	}
 
 	bool accepts(const std::string& input) {
@@ -477,12 +557,6 @@ int main(int argc, char *argv[])
 	// simulate_dfa_test();
 	// simulate_nfa_test();
 
-	std::string regex = "(a|b)*abb";
-
-	RegularExpression re;
-	std::string postfix = re.postfix_expression(regex);
-
-	std::cout << "Postfix expression: " << postfix << std::endl;
 
 
 
