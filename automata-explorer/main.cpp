@@ -337,7 +337,20 @@ private:
 		for (size_t i = 0; i < regex.length(); i++) {
 			char c = regex[i];
 
-			// https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
+			// Inspired by https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
+
+			// Implicit concatenation
+			if (i > 0 && (isalnum(regex[i-1]) || regex[i-1] == ')' || regex[i-1] == '*' ||
+				regex[i-1] == '+' || regex[i-1] == '?') && (isalnum(c) || c == '(')) {
+
+				while (!operators.empty() && operators.top() != '(' &&
+					precedence[operators.top()] >= precedence['.']) {
+					output += operators.top();
+					operators.pop();
+				}
+				operators.push('.');
+			}
+
 			if (c == '(') {
 				operators.push(c);
 			}
@@ -359,16 +372,6 @@ private:
 			else {
 				// Literal character
 				output += c;
-				// Implicit concatenation: if previous was a literal or ')', add '.'
-				if (i > 0 && (isalnum(regex[i-1]) || regex[i-1] == ')' || regex[i-1] == '*' || 
-								regex[i-1] == '+' || regex[i-1] == '?')) {
-					while (!operators.empty() && operators.top() != '(' &&
-							precedence[operators.top()] >= precedence['.']) {
-						output += operators.top();
-						operators.pop();
-					}
-					operators.push('.');
-				}
 			}
 		}
 
@@ -557,8 +560,18 @@ int main(int argc, char *argv[])
 	// simulate_dfa_test();
 	// simulate_nfa_test();
 
+	std::string regex = "a*ba*";
 
+	RegularExpression re(regex);
+	std::string postfix = re.postfix_expression();
+	std::cout << "Regex expression: " << regex << std::endl;
+	std::cout << "Postfix expression: " << postfix << std::endl;
+	Automaton nfa = re.get_nfa();
 
+	std::string input = "abbbba";
+
+	std::cout << "NFA on input string: " << input << ". Result: ";
+	std::cout << nfa.accepts(input) << std::endl;
 
 	return 0;
 }
