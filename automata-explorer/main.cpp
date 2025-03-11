@@ -555,12 +555,8 @@ void simulate_epsilon_nfa_test()
 {
 }
 
-int main(int argc, char *argv[])
-{
-	// simulate_dfa_test();
-	// simulate_nfa_test();
-
-	std::string regex = "a*ba*";
+void simulate_regex_test() {
+	std::string regex = "(a|b)a+";
 
 	RegularExpression re(regex);
 	std::string postfix = re.postfix_expression();
@@ -568,10 +564,14 @@ int main(int argc, char *argv[])
 	std::cout << "Postfix expression: " << postfix << std::endl;
 	Automaton nfa = re.get_nfa();
 
-	std::string input = "abbbba";
+	std::string input = "aa";
 
 	std::cout << "NFA on input string: " << input << ". Result: ";
 	std::cout << nfa.accepts(input) << std::endl;
 
+}
+
+int main(int argc, char *argv[])
+{
 	return 0;
 }
