@@ -1,3 +1,5 @@
+#include <emscripten.h>
+#include <stdio.h>
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -574,4 +576,15 @@ void simulate_regex_test() {
 int main(int argc, char *argv[])
 {
 	return 0;
+}
+
+// testing out webassembly
+extern "C" {
+	EMSCRIPTEN_KEEPALIVE
+	int simulate_regex(const char* regex, const char* input) {
+		std::string regex_str(regex);
+		std::string input_str(input);
+		RegularExpression rp(regex_str);
+		return rp.accepts(input_str);
+	}
 }
