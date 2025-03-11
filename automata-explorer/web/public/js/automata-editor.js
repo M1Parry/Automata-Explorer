@@ -542,6 +542,29 @@ async function saveAutomata() {
     }
 }
 
+function loadAutomata(automata) {
+    states.length = 0;
+    transitions.length = 0;
+
+    if (automata) {
+        automata.states.forEach(state => {
+            const newState = new State(state.x, state.y, state.label);
+            newState.id = state.stateId;
+            newState.isInitial = state.isInitial;
+            newState.isFinal = state.isFinal;
+            states.push(newState);
+        });
+
+        automata.transitions.forEach(transition => {
+            const fromState = states.find(state => state.id === transition.from);
+            const toState = states.find(state => state.id === transition.to);
+            transitions.push(new Transition(fromState, toState, transition.symbol));
+        });
+    }
+
+    drawCanvas();
+}
+
 // Make drawCanvas available to other scripts
 window.drawCanvas = drawCanvas;
 window.states = states;

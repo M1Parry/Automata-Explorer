@@ -29,7 +29,6 @@ function loadProblem(problemId) {
 
     document.getElementById('problemDesc').innerHTML = problemHtml;
 
-
     updateCanvas();
 
     fetch(`/main/problem/${problemId}`)
@@ -44,10 +43,7 @@ function loadProblem(problemId) {
             document.getElementById('problemDeadline').innerText = problem.deadline ? new Date(problem.deadline).toLocaleString() : 'None';
             document.getElementById('problemDifficulty').innerText = problem.difficulty;
 
-            // Load existing answer if available
-            if (data.answer) {
-                loadExistingAnswer(data.answer);
-            }
+            loadAutomata(data.answer);
         }
     });
 }
