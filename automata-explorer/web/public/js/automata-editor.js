@@ -572,3 +572,34 @@ window.transitions = transitions;
 window.stateCounter = stateCounter;
 window.State = State;
 window.Transition = Transition;
+
+// WebAssembly code
+let simulateRegex;
+
+Module.onRuntimeInitialized = function() {
+    simulateRegex = Module.cwrap('simulate_regex', 'number', ['string', 'string']);
+    console.log("WebAssembly module initialized");
+
+    // Test the function
+    try {
+        const result = simulateRegex('a', 'a');
+        console.log("Test regex result:", result);
+    } catch (error) {
+        console.error("Error testing WebAssembly function:", error);
+    }
+};
+
+function testRegexAcceptance(regex, input) {
+    if (!simulateRegex) {
+        console.error("WebAssembly module not initialized");
+        return false;
+    }
+
+    try {
+        return !!simulateRegex(regex, input);
+    } catch (error) {
+        console.error("Error in regex simulation:", error);
+        return false;
+    }
+}
+
