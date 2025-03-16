@@ -570,7 +570,6 @@ void simulate_regex_test() {
 
 	std::cout << "NFA on input string: " << input << ". Result: ";
 	std::cout << nfa.accepts(input) << std::endl;
-
 }
 
 int main(int argc, char *argv[])
@@ -586,5 +585,27 @@ extern "C" {
 		std::string input_str(input);
 		RegularExpression rp(regex_str);
 		return rp.accepts(input_str);
+	}
+
+	EMSCRIPTEN_KEEPALIVE
+	int simulate_nfa(int* states, int states_len, char* alphabet, int alphabet_len,
+					int start, int* accept, int accept_len,
+					int* trans_from, char* trans_symbol, int* trans_to, int trans_len,
+					int* epsilon_from, int* epsilon_to, int epsilon_len,
+					const char* input) {
+		std::vector<int> states_vec(states, states + states_len);
+		std::vector<char> alphabet_vec(alphabet, alphabet + alphabet_len);
+		std::vector<int> accept_vec(accept, accept + accept_len);
+		Automaton nfa(states_vec, alphabet_vec, start, accept_vec, false);
+
+		for (int i = 0; i < trans_len; i++) {
+			nfa.add_nfa_transition(trans_from[i], trans_symbol[i], trans_to[i]);
+		}
+		for (int i = 0; i < epsilon_len; i++) {
+			nfa.add_epsilon_transition(epsilon_from[i], epsilon_to[i]);
+		}
+
+		std::string input_str(input);
+		return nfa.accepts(input_str) ? 1 : 0;
 	}
 }
