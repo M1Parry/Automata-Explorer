@@ -304,6 +304,145 @@ public:
 
 		return dfa;
 	}
+
+	// Using the Hopcroft algorithm https://en.wikipedia.org/wiki/DFA_minimization
+	Automaton minimize_dfa() {
+		if (!is_deterministic) {
+			return nfa_to_dfa().minimize_dfa();
+		}
+
+		// Remove unreachable states
+		std::set<int> reachable;
+		std::queue<int> queue;
+		reachable.insert(start);
+		queue.push(start);
+
+		while (!queue.empty()) {
+			int current = queue.front();
+			queue.pop();
+
+			for (char symbol : alphabet) {
+				if (dfa_transitions[current].find(symbol) != dfa_transitions[current].end()) {
+					int next = dfa_transitions[current][symbol];
+					if (reachable.find(next) == reachable.end()) {
+						reachable.insert(next);
+						queue.push(next);
+					}
+				}
+			}
+		}
+
+		// Partition dfa states
+		std::vector<std::set<int>> partition;
+		std::set<int> accepting_states;
+		std::set<int> non_accepting_states;
+
+		for (int state : states) {
+			if (reachable.find(state) != reachable.end()) {
+				if (is_accepting_state(state)) {
+					accepting_states.insert(state);
+				} else {
+					non_accepting_states.insert(state);
+				}
+			}
+		}
+
+		if (!accepting_states.empty()) {
+			partition.push_back(accepting_states);
+		}
+		if (!non_accepting_states.empty()) {
+			partition.push_back(non_accepting_states);
+		}
+
+		bool changed = true;
+		while (changed) {
+			changed = false;
+			std::vector<std::set<int>> new_partition;
+
+			for (auto& group : partition) {
+				if (group.size() <= 1) {
+					new_partition.push_back(group);
+					continue;
+				}
+
+				std::map<std::vector<int>, std::set<int>> subgroups;
+				for (int state : group) {
+					std::vector<int> signature;
+					for (char symbol : alphabet) {
+						if (dfa_transitions[state].find(symbol) != dfa_transitions[state].end()) {
+							int target = dfa_transitions[state][symbol];
+
+							// Find which group the target state belongs to
+							for (size_t i = 0; i < partition.size(); i++) {
+								if (partition[i].find(target) != partition[i].end()) {
+									signature.push_back(i);
+									break;
+								}
+							}
+						} else {
+							// If no transition, use a special value
+							signature.push_back(-1);
+						}
+					}
+
+					subgroups[signature].insert(state);
+				}
+
+				if (subgroups.size() > 1) {
+					changed = true;
+					for (auto& subgroup : subgroups) {
+						new_partition.push_back(subgroup.second);
+					}
+				} else {
+					new_partition.push_back(group);
+				}
+			}
+
+			partition = new_partition;
+		}
+
+		// Construct minimized dfa
+		Automaton minimized;
+		minimized.is_deterministic = true;
+		minimized.contains_epsilon = false;
+		minimized.alphabet = alphabet;
+
+		std::map<int, int> state_to_group;
+		for (size_t i = 0; i < partition.size(); i++) {
+			for (int state : partition[i]) {
+				state_to_group[state] = i;
+			}
+		}
+
+		for (size_t i = 0; i < partition.size(); i++) {
+			minimized.add_state(i);
+		}
+
+		minimized.set_start(state_to_group[start]);
+
+		for (int state : accept) {
+			if (reachable.find(state) != reachable.end()) {
+				minimized.add_accept(state_to_group[state]);
+			}
+		}
+
+		// Add transitions
+		for (size_t i = 0; i < partition.size(); i++) {
+			int representative = *partition[i].begin();
+
+			for (char symbol : alphabet) {
+				if (dfa_transitions[representative].find(symbol) != dfa_transitions[representative].end()) {
+					int target = dfa_transitions[representative][symbol];
+					int target_group = state_to_group[target];
+
+					minimized.add_dfa_transition(i, symbol, target_group);
+				}
+			}
+		}
+
+		return minimized;
+	}
+
 };
 
 
