@@ -443,6 +443,57 @@ public:
 		return minimized;
 	}
 
+	bool is_equivalent(Automaton& other) {
+		if (is_deterministic != other.is_deterministic) {
+			std::cerr << "Automata are not of the same type" << std::endl;
+			return false;
+		}
+
+		if (alphabet != other.alphabet) {
+			std::cerr << "Alphabets are not the same" << std::endl;
+			return false;
+		}
+
+		Automaton dfa1 = minimize_dfa();
+		Automaton dfa2 = other.minimize_dfa();
+
+		if (dfa1.states.size() != dfa2.states.size() ||
+			dfa1.accept.size() != dfa2.accept.size() ||
+			dfa1.start != dfa2.start) {
+			return false;
+		}
+
+		std::map<int, int> state_mapping;
+		for (size_t i = 0; i < dfa1.states.size(); i++) {
+			state_mapping[dfa1.states[i]] = dfa2.states[i];
+		}
+
+		for (int state : dfa1.states) {
+			for (char symbol : dfa1.alphabet) {
+				auto dfa1_target = dfa1.dfa_transitions[state].find(symbol);
+				if (dfa1_target == dfa1.dfa_transitions[state].end() ||
+					dfa2.dfa_transitions[state].find(symbol) == dfa2.dfa_transitions[state].end()) {
+					return false;
+				}
+
+				if (dfa1_target != dfa1.dfa_transitions[state].end()) {
+					if (state_mapping[dfa1_target-> second] != dfa2.dfa_transitions[state][symbol]) {
+						return false;
+					}
+				}
+			}
+		}
+
+		// Check accept states
+		for (int state : dfa1.accept) {
+			if (std::find(dfa2.accept.begin(), dfa2.accept.end(), state_mapping[state]) == dfa2.accept.end()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 };
 
 
@@ -711,8 +762,40 @@ void simulate_regex_test() {
 	std::cout << nfa.accepts(input) << std::endl;
 }
 
+void test_is_equivalent() {
+	// example from https://www.geeksforgeeks.org/equivalence-of-f-s-a-finite-state-automata/
+	std::vector<char> alphabet = {'c', 'd'};
+	std::vector<int> dfa1_states = {0, 1, 2};
+	std::vector<int> dfa2_states = {0, 1, 2, 3};
+	int start = 0;
+	std::vector<int> accept = {0};
+
+	// dfa1
+	Automaton dfa1(dfa1_states, alphabet, start, accept, true);
+	dfa1.add_dfa_transition(0, 'c', 0);
+	dfa1.add_dfa_transition(0, 'd', 1);
+	dfa1.add_dfa_transition(1, 'c', 2);
+	dfa1.add_dfa_transition(1, 'd', 0);
+	dfa1.add_dfa_transition(2, 'c', 1);
+	dfa1.add_dfa_transition(2, 'd', 2);
+
+	// dfa2
+	Automaton dfa2(dfa2_states, alphabet, start, accept, true);
+	dfa2.add_dfa_transition(0, 'c', 0);
+	dfa2.add_dfa_transition(0, 'd', 1);
+	dfa2.add_dfa_transition(1, 'c', 2);
+	dfa2.add_dfa_transition(1, 'd', 0);
+	dfa2.add_dfa_transition(2, 'c', 3);
+	dfa2.add_dfa_transition(2, 'd', 2);
+	dfa2.add_dfa_transition(3, 'c', 2);
+	dfa2.add_dfa_transition(3, 'd', 0);
+
+	std::cout << "DFA1 is equivalent to DFA2: " << dfa1.is_equivalent(dfa2) << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
+	test_is_equivalent();
 	return 0;
 }
 
