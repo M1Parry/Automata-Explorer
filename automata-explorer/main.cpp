@@ -727,6 +727,24 @@ extern "C" {
 	}
 
 	EMSCRIPTEN_KEEPALIVE
+	int simulate_dfa(int* states, int states_len, char* alphabet, int alphabet_len,
+					int start, int* accept, int accept_len,
+					int* trans_from, char* trans_symbol, int* trans_to, int trans_len,
+					const char* input) {
+		std::vector<int> states_vec(states, states + states_len);
+		std::vector<char> alphabet_vec(alphabet, alphabet + alphabet_len);
+		std::vector<int> accept_vec(accept, accept + accept_len);
+		Automaton dfa(states_vec, alphabet_vec, start, accept_vec, true);
+
+		for (int i = 0; i < trans_len; i++) {
+			dfa.add_dfa_transition(trans_from[i], trans_symbol[i], trans_to[i]);
+		}
+
+		std::string input_str(input);
+		return dfa.accepts(input_str) ? 1 : 0;
+	}
+
+	EMSCRIPTEN_KEEPALIVE
 	int simulate_nfa(int* states, int states_len, char* alphabet, int alphabet_len,
 					int start, int* accept, int accept_len,
 					int* trans_from, char* trans_symbol, int* trans_to, int trans_len,
