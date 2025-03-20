@@ -186,6 +186,55 @@ public:
 		return true; // All transitions are valid
 	}
 
+	std::string get_alphabet()
+	{
+		std::string alphabet_str;
+		for (char symbol : alphabet) {
+			alphabet_str += symbol;
+		}
+		return alphabet_str;
+	}
+
+	std::vector<int> get_states()
+	{
+		return states;
+	}
+
+	std::vector<int> get_accept_states()
+	{
+		return accept;
+	}
+
+	int get_start_state()
+	{
+		return start;
+	}
+
+	void print_transitions()
+	{
+		// format: state -> {symbol -> target}
+		if (is_deterministic) {
+			for (int state : states) {
+				std::cout << state << ": ";
+				for (auto t : dfa_transitions[state]) {
+					std::cout << t.first << " -> " << t.second << ", ";
+				}
+				std::cout << std::endl;
+			}
+		} else {
+			for (int state : states) {
+				std::cout << state << ": ";
+				for (auto t : nfa_transitions[state]) {
+					std::cout << t.first << " -> ";
+					for (int target : t.second) {
+						std::cout << target << ", ";
+					}
+				}
+				std::cout << std::endl;
+			}
+		}
+	}
+
 	bool is_accepting_state(int state)
 	{
 		if (std::find(accept.begin(), accept.end(), state) != accept.end()) {
@@ -444,18 +493,8 @@ public:
 	}
 
 	bool is_equivalent(Automaton& other) {
-		if (is_deterministic != other.is_deterministic) {
-			std::cerr << "Automata are not of the same type" << std::endl;
-			return false;
-		}
-
-		if (alphabet != other.alphabet) {
-			std::cerr << "Alphabets are not the same" << std::endl;
-			return false;
-		}
-
-		Automaton dfa1 = minimize_dfa();
-		Automaton dfa2 = other.minimize_dfa();
+		Automaton dfa1 = is_deterministic ? minimize_dfa() : nfa_to_dfa().minimize_dfa();
+		Automaton dfa2 = other.is_deterministic ? other.minimize_dfa() : other.nfa_to_dfa().minimize_dfa();
 
 		if (dfa1.states.size() != dfa2.states.size() ||
 			dfa1.accept.size() != dfa2.accept.size() ||
@@ -464,20 +503,45 @@ public:
 		}
 
 		std::map<int, int> state_mapping;
-		for (size_t i = 0; i < dfa1.states.size(); i++) {
-			state_mapping[dfa1.states[i]] = dfa2.states[i];
-		}
+		std::queue<int> queue;
+		std::set<int> visited1;
 
-		for (int state : dfa1.states) {
+		while (!queue.empty()) {
+			int state1 = queue.front();
+			queue.pop();
+			int state2 = state_mapping[state1];
+
+			// Accepting status must match
+			if (dfa1.is_accepting_state(state1) != dfa2.is_accepting_state(state2)) {
+				return false;
+			}
+
+			// Check transitions for each symbol
 			for (char symbol : dfa1.alphabet) {
-				auto dfa1_target = dfa1.dfa_transitions[state].find(symbol);
-				if (dfa1_target == dfa1.dfa_transitions[state].end() ||
-					dfa2.dfa_transitions[state].find(symbol) == dfa2.dfa_transitions[state].end()) {
+				auto it1 = dfa1.dfa_transitions[state1].find(symbol);
+				auto it2 = dfa2.dfa_transitions[state2].find(symbol);
+
+				if ((it1 == dfa1.dfa_transitions[state1].end()) !=
+					(it2 == dfa2.dfa_transitions[state2].end())) {
 					return false;
 				}
 
-				if (dfa1_target != dfa1.dfa_transitions[state].end()) {
-					if (state_mapping[dfa1_target-> second] != dfa2.dfa_transitions[state][symbol]) {
+				// If transition exists, process it
+				if (it1 != dfa1.dfa_transitions[state1].end()) {
+					int next1 = it1->second;
+					int next2 = it2->second;
+
+					// If state1's target hasn't been mapped yet
+					if (state_mapping.find(next1) == state_mapping.end()) {
+						state_mapping[next1] = next2;
+
+						if (visited1.find(next1) == visited1.end()) {
+							queue.push(next1);
+							visited1.insert(next1);
+						}
+					}
+					// If it has been mapped, check consistency
+					else if (state_mapping[next1] != next2) {
 						return false;
 					}
 				}
@@ -790,7 +854,33 @@ void test_is_equivalent() {
 	dfa2.add_dfa_transition(3, 'c', 2);
 	dfa2.add_dfa_transition(3, 'd', 0);
 
-	std::cout << "DFA1 is equivalent to DFA2: " << dfa1.is_equivalent(dfa2) << std::endl;
+	// std::cout << "DFA1 is equivalent to DFA2: " << dfa1.is_equivalent(dfa2) << std::endl;
+
+	// comparing regex with dfa
+	std::string regex = "b*ab";
+
+	RegularExpression re1(regex);
+
+	std::vector<char> alphabet1 = {'a', 'b'};
+	std::vector<int> states = {0, 1, 2};
+	start = 0;
+	accept = {2};
+
+	Automaton dfa(states, alphabet1, start, accept, true);
+	dfa.add_dfa_transition(0, 'a', 1);
+	dfa.add_dfa_transition(0, 'b', 0);
+	dfa.add_dfa_transition(1, 'b', 2);
+	std::cout << "dfa accepts 'ab': " << dfa.accepts("ab") << std::endl;
+	dfa.print_transitions();
+
+	// minimize dfa to test
+	Automaton minimized_dfa = dfa.minimize_dfa();
+	std::cout << "minimized_dfa accepts 'ab': " << minimized_dfa.accepts("ab") << std::endl;
+
+	std::cout << std::endl;
+
+	std::cout << "Regex is equivalent to DFA: " << std::endl;
+	std::cout << re1.get_dfa().is_equivalent(dfa) << std::endl;
 }
 
 int main(int argc, char *argv[])
