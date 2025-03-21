@@ -86,7 +86,11 @@ function loadProblems() {
             const nfaProblems = problems.filter(problem => problem.type === 'NFA');
 
             let dfaHtml = dfaProblems.map(problem => `
-                <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}</a>
+                <span>
+                <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}
+                <button type="button" class="btn btn-sm" onclick="loadProblemEditor('${problem.id}')"><i class="bi bi-pencil"></i></button>
+                </a>
+                </span>
             `).join('');
 
             let nfaHtml = nfaProblems.map(problem => `
@@ -149,13 +153,14 @@ function createProblem() {
         const title = document.getElementById('problemTitle').value;
         const description = document.getElementById('problemDescription').value;
         const type = document.getElementById('problemType').value;
+        const regex = document.getElementById('problemRegex').value;
 
         fetch('/main/problem/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ title, description, type })
+            body: JSON.stringify({ title, description, regex, type })
         })
         .then(response => response.json())
         .then(data => {
@@ -190,6 +195,11 @@ function loadProblemEditor(problemId) {
                 <div class="mb-3">
                     <label for="editDescription" class="form-label">Description</label>
                     <textarea class="form-control" id="editDescription" rows="4" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="editRegex" class="form-label">Regular Expression</label>
+                    <input type="text" class="form-control" id="editRegex">
                 </div>
 
                 <div class="mb-3">
@@ -247,6 +257,7 @@ function loadProblemEditor(problemId) {
         // Populate form with existing data
         document.getElementById('editTitle').value = problem.title;
         document.getElementById('editDescription').value = problem.description;
+        document.getElementById('editRegex').value = problem.regex;
         document.getElementById('editType').value = problem.type;
         document.getElementById('editDeadline').value = problem.deadline ? new Date(problem.deadline).toISOString().slice(0, 16) : '';
         document.getElementById('editDifficulty').value = problem.difficulty;
@@ -268,6 +279,7 @@ function updateProblem(problemId) {
     const problemData = {
         title: document.getElementById('editTitle').value,
         description: document.getElementById('editDescription').value,
+        regex: document.getElementById('editRegex').value,
         type: document.getElementById('editType').value,
         deadline: document.getElementById('editDeadline').value,
         difficulty: document.getElementById('editDifficulty').value,
@@ -286,6 +298,7 @@ function updateProblem(problemId) {
         if (data.success) {
             alert('Problem updated successfully');
             loadProblems();
+            loadProblem(problemId);
         } else {
             alert('Failed to update problem');
         }
@@ -304,8 +317,7 @@ function deleteProblem(problemId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Problem deleted successfully');
-                window.location.href = '/problems'; // Redirect to problems list
+                window.location.href = '/main'; // Redirect to problems list
             } else {
                 alert('Failed to delete problem');
             }

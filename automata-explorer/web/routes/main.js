@@ -18,13 +18,19 @@ router.get('/', (req, res) => {
     let teacherid = '678773aca785c93a0dfb4958'
     let studentid = '67877374a785c93a0dfb4955'
     req.session.user = {
-        id: studentid,
+        id: teacherid,
         username: 'teacher1',
-        userType: 'student',
+        userType: 'teacher',
         university: '67877331a785c93a0dfb494f',
         isAdmin: false
     };
     // end of testing
+
+    // uncomment for production
+    // if (!req.session.user) {
+    //     res.redirect('/auth/login');
+    // }
+
     if (req.session.user.userType === 'teacher') {
         res.sendFile(path.join(__dirname, '../public/html/teacher.html'));
     } else {
@@ -92,6 +98,7 @@ router.get('/problem/update/:id', isTeacher, async (req, res) => {
         id: problem.id,
         title: problem.title,
         description: problem.description,
+        regex: problem.regex,
         type: problem.type,
         deadline: problem.deadline,
         difficulty: problem.difficulty,
@@ -103,7 +110,7 @@ router.get('/problem/update/:id', isTeacher, async (req, res) => {
 
 router.post('/problem/update/:id', isTeacher, (req, res) => {
     const { id } = req.params;
-    const { title, description, type, difficulty, deadline, enabled } = req.body;
+    const { title, description, regex, type, difficulty, deadline, enabled } = req.body;
 
     // Validate input
     if (!title || !description || !type || !difficulty || !deadline || !enabled) {
@@ -113,6 +120,7 @@ router.post('/problem/update/:id', isTeacher, (req, res) => {
     Problem.findByIdAndUpdate(id, {
         title,
         description,
+        regex,
         type,
         difficulty,
         deadline,
@@ -132,7 +140,7 @@ router.post('/problem/update/:id', isTeacher, (req, res) => {
 
 // Create problem
 router.post('/problem/create', isTeacher, (req, res) => {
-    const { title, description, type } = req.body;
+    const { title, description, regex, type } = req.body;
     university = req.session.user.university;
     creator = req.session.user.id;
     const deadline = new Date().setDate(new Date().getDate() + 14);
@@ -140,6 +148,7 @@ router.post('/problem/create', isTeacher, (req, res) => {
     const problem = new Problem({
         title,
         description,
+        regex,
         type,
         university,
         creator,

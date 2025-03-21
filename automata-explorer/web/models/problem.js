@@ -11,6 +11,11 @@ const problemSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    regex: {
+        type: String,
+        required: false,
+        trim: true
+    },
     type: {
         type: String,
         required: true,
