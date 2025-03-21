@@ -938,4 +938,45 @@ extern "C" {
 		std::string input_str(input);
 		return nfa.accepts(input_str) ? 1 : 0;
 	}
+
+	EMSCRIPTEN_KEEPALIVE
+	bool check_automata_equivalence(
+		// first automaton
+		int* states1, int states1_len, char* alphabet1, int alphabet1_len,
+		int start1, int* accept1, int accept_len,
+		int* trans_from1, char* trans_symbol1, int* trans_to1, int trans1_len,
+		int* epsilon_from1, int* epsilon_to1, int epsilon1_len,
+
+		// second automaton parameters
+		int* states2, int states2_len, char* alphabet2, int alphabet2_len,
+		int start2, int* accept2, int accept2_len,
+		int* trans_from2, char* trans_symbol2, int* trans_to2, int trans2_len,
+		int* epsilon_from2, int* epsilon_to2, int epsilon2_len) {
+
+		// create first automaton
+		std::vector<int> states_vec1(states1, states1 + states1_len);
+		std::vector<char> alphabet_vec1(alphabet1, alphabet1 + alphabet1_len);
+		std::vector<int> accept_vec1(accept1, accept1 + accept_len);
+		Automaton automaton1(states_vec1, alphabet_vec1, start1, accept_vec1, false);
+		for (int i = 0; i < trans1_len; i++) {
+			automaton1.add_nfa_transition(trans_from1[i], trans_symbol1[i], trans_to1[i]);
+		}
+		for (int i = 0; i < epsilon1_len; i++) {
+			automaton1.add_epsilon_transition(epsilon_from1[i], epsilon_to1[i]);
+		}
+
+		// create second automaton
+		std::vector<int> states_vec2(states2, states2 + states2_len);
+		std::vector<char> alphabet_vec2(alphabet2, alphabet2 + alphabet2_len);
+		std::vector<int> accept_vec2(accept2, accept2 + accept2_len);
+		Automaton automaton2(states_vec2, alphabet_vec2, start2, accept_vec2, false);
+		for (int i = 0; i < trans2_len; i++) {
+			automaton2.add_nfa_transition(trans_from1[i], trans_symbol1[i], trans_to1[i]);
+		}
+		for (int i = 0; i < epsilon2_len; i++) {
+			automaton2.add_epsilon_transition(epsilon_from1[i], epsilon_to1[i]);
+		}
+
+		return automaton1.is_equivalent(automaton2);
+	}
 }
