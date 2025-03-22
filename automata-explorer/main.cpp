@@ -226,14 +226,18 @@ public:
 			}
 		} else {
 			for (int state : states) {
-				std::cout << state << ": ";
+				// std::cout << state << ": ";
+				printf("%i: \n", state);
 				for (auto t : nfa_transitions[state]) {
-					std::cout << t.first << " -> ";
+					// std::cout << t.first << " -> ";
+					printf("%c -> \n", t.first);
 					for (int target : t.second) {
-						std::cout << target << ", ";
+						// std::cout << target << ", ";
+						printf("%i, \n", target);
 					}
 				}
-				std::cout << std::endl;
+				printf("--------------------\n");
+				// std::cout << std::endl;
 			}
 		}
 	}
@@ -885,34 +889,6 @@ void test_is_equivalent() {
 
 int main(int argc, char *argv[])
 {
-	std::string regex = "a*ba";
-	RegularExpression re(regex);
-	Automaton rdfa = re.get_dfa().minimize_dfa();
-	rdfa.print_transitions();
-
-	// create dfa
-	std::vector<int> states = {0, 1, 2};
-	std::vector<char> alphabet = {'a', 'b'};
-	int start = 0;
-	std::vector<int> accept = {2};
-
-	Automaton dfa(states, alphabet, start, accept, true);
-
-	dfa.add_dfa_transition(0, 'a', 0);
-	dfa.add_dfa_transition(0, 'b', 1);
-	dfa.add_dfa_transition(1, 'a', 2);
-
-	// test dfa
-	std::string input = "aaaaba";
-	std::cout << "DFA on input string: " << input << ". Result: ";
-	std::cout << dfa.accepts(input) << std::endl;
-	Automaton dfa2 = dfa.minimize_dfa();
-	dfa2.print_transitions();
-
-	// check equiv
-	std::cout << "Regex is equivalent to DFA: " << std::endl;
-	std::cout << re.get_dfa().is_equivalent(dfa) << std::endl;
-
 	return 0;
 }
 
@@ -985,9 +961,33 @@ extern "C" {
 			dfa.add_dfa_transition(trans_from[i], trans_symbol[i], trans_to[i]);
 		}
 
-		dfa.print_transitions();
-
 		return re.get_dfa().is_equivalent(dfa);
+	}
+
+	EMSCRIPTEN_KEEPALIVE
+	int regex_vs_nfa(
+		const char* regex, int* states, int states_len, char* alphabet, int alphabet_len,
+		int start, int* accept, int accept_len, int* trans_from, char* trans_symbol,
+		int* trans_to, int trans_len, int* epsilon_from, int* epsilon_to, int epsilon_len) {
+
+		std::string regex_str(regex);
+		RegularExpression re(regex_str);
+
+		std::vector<int> states_vec(states, states + states_len);
+		std::vector<char> alphabet_vec(alphabet, alphabet + alphabet_len);
+		std::vector<int> accept_vec(accept, accept + accept_len);
+
+		Automaton nfa(states_vec, alphabet_vec, start, accept_vec, false);
+
+		for (int i = 0; i < trans_len; i++ ) {
+			nfa.add_nfa_transition(trans_from[i], trans_symbol[i], trans_to[i]);
+		}
+
+		for (int i = 0; i < epsilon_len; i++) {
+			nfa.add_epsilon_transition(epsilon_from[i], epsilon_to[i]);
+		}
+
+		return re.get_nfa().is_equivalent(nfa);
 	}
 
 	EMSCRIPTEN_KEEPALIVE
