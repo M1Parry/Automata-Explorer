@@ -96,7 +96,11 @@ function loadProblems() {
             `).join('');
 
             let nfaHtml = nfaProblems.map(problem => `
-                <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}</a>
+                <span>
+                <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}
+                <button type="button" class="btn btn-sm" onclick="loadProblemEditor('${problem.id}')"><i class="bi bi-pencil"></i></button>
+                </a>
+                </span>
             `).join('');
 
             document.getElementById('dfaProblemList').innerHTML = dfaHtml;
