@@ -729,7 +729,6 @@ window.stateCounter = stateCounter;
 window.State = State;
 window.Transition = Transition;
 
-
 Module.onRuntimeInitialized = function() {
     console.log("WebAssembly module initialized");
     simulateRegex = Module.cwrap('simulate_regex', 'number', ['string', 'string']);
@@ -773,66 +772,4 @@ function testRegexAcceptance(regex, input) {
     } catch (error) { console.error("Error in regex simulation:", error);
         return false;
     }
-}
-
-function testNfa() {
-    const states = new Int32Array([0, 1, 2, 3]);
-    const alphabet = new Uint8Array(['0', '1'].map(c => c.charCodeAt(0)));
-    const start = 0;
-    const accept = new Int32Array([3]);
-    const transFrom = new Int32Array([0, 0, 1, 1, 2, 2]);
-    const transSymbol = new Uint8Array(['0', '1', '0', '1', '0', '1'].map(c => c.charCodeAt(0)));
-    const transTo = new Int32Array([0, 1, 2, 2, 3, 3]);
-    const epsilonFrom = new Int32Array([]);
-    const epsilonTo = new Int32Array([]);
-
-    // Allocate memory for all arrays
-    const statesPtr = Module._malloc(states.length * states.BYTES_PER_ELEMENT);
-    const alphabetPtr = Module._malloc(alphabet.length * alphabet.BYTES_PER_ELEMENT);
-    const acceptPtr = Module._malloc(accept.length * accept.BYTES_PER_ELEMENT);
-    const transFromPtr = Module._malloc(transFrom.length * transFrom.BYTES_PER_ELEMENT);
-    const transSymbolPtr = Module._malloc(transSymbol.length * transSymbol.BYTES_PER_ELEMENT);
-    const transToPtr = Module._malloc(transTo.length * transTo.BYTES_PER_ELEMENT);
-    const epsilonFromPtr = Module._malloc(1 * Int32Array.BYTES_PER_ELEMENT);
-    const epsilonToPtr = Module._malloc(1 * Int32Array.BYTES_PER_ELEMENT);
-
-    console.log("Allocated memory");
-
-    // Copy data to the Emscripten heap.
-    // Shift by 2 to get the byte offset
-    Module.HEAP32.set(states, statesPtr >> 2);
-    Module.HEAPU8.set(alphabet, alphabetPtr);
-    Module.HEAP32.set(accept, acceptPtr >> 2);
-    Module.HEAP32.set(transFrom, transFromPtr >> 2);
-    Module.HEAPU8.set(transSymbol, transSymbolPtr);
-    Module.HEAP32.set(transTo, transToPtr >> 2);
-
-    if (epsilonFrom.length === 0) {
-        Module.HEAP32[epsilonFromPtr >> 2] = 0;
-    } else {
-        Module.HEAP32.set(epsilonFrom, epsilonFromPtr >> 2);
-    }
-
-    if (epsilonTo.length === 0) {
-        Module.HEAP32[epsilonToPtr >> 2] = 0;
-    } else {
-        Module.HEAP32.set(epsilonTo, epsilonToPtr >> 2);
-    }
-
-    const result = simulateNFA(
-        statesPtr, states.length, alphabetPtr, alphabet.length, start,
-        acceptPtr, accept.length, transFromPtr, transSymbolPtr, transToPtr, transFrom.length,
-        epsilonFromPtr, epsilonToPtr, epsilonFrom.length, '0101'
-    );
-
-    Module._free(statesPtr);
-    Module._free(alphabetPtr);
-    Module._free(acceptPtr);
-    Module._free(transFromPtr);
-    Module._free(transSymbolPtr);
-    Module._free(transToPtr);
-    Module._free(epsilonFromPtr);
-    Module._free(epsilonToPtr);
-
-    console.log("NFA simulation result:", result);
 }
