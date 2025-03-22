@@ -20,6 +20,7 @@ function loadProblem(problemId) {
             <h3 id="problemTitle"></h3>
             <p id="problemDescription"></p>
             <div class="d-flex justify-content-between">
+                <p><strong>Regex:</strong> <span id="problemRegex"></span></p>
                 <p><strong>Type:</strong> <span id="problemType"></span></p>
                 <p><strong>Deadline:</strong> <span id="problemDeadline"></span></p>
                 <p><strong>Difficulty:</strong> <span id="problemDifficulty"></span></p>
@@ -38,6 +39,7 @@ function loadProblem(problemId) {
             const problem = data.problem;
             document.getElementById('problemTitle').innerText = problem.title;
             document.getElementById('problemDescription').innerText = problem.description;
+            document.getElementById('problemRegex').innerText = problem.regex;
             document.getElementById('problemType').innerText = problem.type;
             document.getElementById('problemType').dataset.type = problem.type;
             document.getElementById('problemDeadline').innerText = problem.deadline ? new Date(problem.deadline).toLocaleString() : 'None';

@@ -18,9 +18,9 @@ router.get('/', (req, res) => {
     let teacherid = '678773aca785c93a0dfb4958'
     let studentid = '67877374a785c93a0dfb4955'
     req.session.user = {
-        id: teacherid,
+        id: studentid,
         username: 'teacher1',
-        userType: 'teacher',
+        userType: 'student',
         university: '67877331a785c93a0dfb494f',
         isAdmin: false
     };
@@ -64,6 +64,7 @@ router.get('/problem/:id', async (req, res) => {
         id: problem.id,
         title: problem.title,
         description: problem.description,
+        regex: problem.regex,
         type: problem.type,
         deadline: problem.deadline,
         difficulty: problem.difficulty,
