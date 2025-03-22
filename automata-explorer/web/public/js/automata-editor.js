@@ -18,6 +18,8 @@ let isDeleteTransitionMode = false;
 let simulateRegex;
 let simulateNFA;
 let regex_vs_dfa;
+let regex_vs_nfa;
+
 
 class State {
     constructor(x, y, label) {
@@ -509,27 +511,35 @@ document.getElementById('clearAutomataBtn').addEventListener('click', () => {
 });
 
 function serializeAutomata() {
-    return {
-        states: states.map(state => ({
-            stateId: state.id,
-            label: state.label,
-            x: state.x,
-            y: state.y,
-            isInitial: state.isInitial,
-            isFinal: state.isFinal
-        })),
-        transitions: transitions.map(transition => ({
-            from: transition.from.id,
-            to: transition.to.id,
-            symbol: transition.symbol
-        }))
-    };
+    let states_array = [];
+    states_array = states.map(state => ({
+        stateId: state.id,
+        label: state.label,
+        x: state.x,
+        y: state.y,
+        isInitial: state.isInitial,
+        isFinal: state.isFinal
+    }));
+
+    let transitions_array = [];
+    for (let i = 0; i < transitions.length; i++) {
+        const transition = transitions[i];
+        const symbols = transition.symbol.split(',');
+        for (let j = 0; j < symbols.length; j++) {
+            transitions_array.push({
+                from: transition.from.id,
+                to: transition.to.id,
+                symbol: symbols[j]
+            });
+        }
+    }
+
+    return { states: states_array, transitions: transitions_array };
 }
 
 async function saveAutomata() {
     try {
         const data = serializeAutomata();
-        console.log("data: ", data);
         const problemId = document.getElementById('problem').dataset.id;
 
         const response = await fetch(`/main/answer/save/${problemId}`, {
@@ -551,17 +561,21 @@ async function saveAutomata() {
 
 function checkAutomata() {
     const problemType = document.getElementById('problemType').dataset.type;
-    const problemId = document.getElementById('problem').dataset.id;
-    const automata = serializeAutomata();
-    console.log("automata: ", automata);
+    if (problemType === 'DFA') {
+        checkDFA();
+    }
+    else if (problemType === 'NFA') {
+        checkNFA();
+    }
+}
 
-    // first check with regex_vs_dfa webassembly function
+function checkDFA() {
+    const automata = serializeAutomata();
 
     let symbols = new Set();
     automata.transitions.forEach(transition => {
         symbols.add(transition.symbol);
     });
-
 
     const regex = document.getElementById('problemRegex').innerText;
     const statesArray = new Int32Array(automata.states.map(state => state.stateId));
@@ -609,6 +623,81 @@ function checkAutomata() {
     }
 }
 
+function checkNFA() {
+    const automata = serializeAutomata();
+
+    let symbols = new Set();
+    automata.transitions.forEach(transition => {
+        symbols.add(transition.symbol);
+    });
+
+    const regex = document.getElementById('problemRegex').innerText;
+    const statesArray = new Int32Array(automata.states.map(state => state.stateId));
+    const alphabetArray = new Uint8Array([...symbols].map(c => c.charCodeAt(0)));
+
+    const startState = automata.states.find(state => state.isInitial);
+    const acceptStates = automata.states.filter(state => state.isFinal);
+    const acceptArray = new Int32Array(acceptStates.map(state => state.stateId));
+
+    const transFromArray = new Int32Array(automata.transitions.map(transition => transition.from));
+    const transSymbolArray = new Uint8Array(automata.transitions.map(transition => transition.symbol.charCodeAt(0)));
+    const transToArray = new Int32Array(automata.transitions.map(transition => transition.to));
+
+    const epsilonFrom = new Int32Array([]);
+    const epsilonTo = new Int32Array([]);
+
+    // Allocate memory for all arrays
+    const statesPtr = Module._malloc(statesArray.length * statesArray.BYTES_PER_ELEMENT);
+    const alphabetPtr = Module._malloc(alphabetArray.length * alphabetArray.BYTES_PER_ELEMENT);
+    const acceptPtr = Module._malloc(acceptArray.length * acceptArray.BYTES_PER_ELEMENT);
+    const transFromPtr = Module._malloc(transFromArray.length * transFromArray.BYTES_PER_ELEMENT);
+    const transSymbolPtr = Module._malloc(transSymbolArray.length * transSymbolArray.BYTES_PER_ELEMENT);
+    const transToPtr = Module._malloc(transToArray.length * transToArray.BYTES_PER_ELEMENT);
+    const epsilonFromPtr = Module._malloc(1 * Int32Array.BYTES_PER_ELEMENT);
+    const epsilonToPtr = Module._malloc(1 * Int32Array.BYTES_PER_ELEMENT);
+
+    // Copy
+    Module.HEAP32.set(statesArray, statesPtr >> 2);
+    Module.HEAPU8.set(alphabetArray, alphabetPtr);
+    Module.HEAP32.set(acceptArray, acceptPtr >> 2);
+    Module.HEAP32.set(transFromArray, transFromPtr >> 2);
+    Module.HEAPU8.set(transSymbolArray, transSymbolPtr);
+    Module.HEAP32.set(transToArray, transToPtr >> 2);
+
+    if (epsilonFrom.length === 0) {
+        Module.HEAP32[epsilonFromPtr >> 2] = 0;
+    } else {
+        Module.HEAP32.set(epsilonFrom, epsilonFromPtr >> 2);
+    }
+
+    if (epsilonTo.length === 0) {
+        Module.HEAP32[epsilonToPtr >> 2] = 0;
+    } else {
+        Module.HEAP32.set(epsilonTo, epsilonToPtr >> 2);
+    }
+
+    const result = regex_vs_nfa(
+        regex, statesPtr, statesArray.length, alphabetPtr, alphabetArray.length, 0, acceptPtr,
+        acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length,
+        epsilonFromPtr, epsilonToPtr, epsilonFrom.length);
+
+    Module._free(statesPtr);
+    Module._free(alphabetPtr);
+    Module._free(acceptPtr);
+    Module._free(transFromPtr);
+    Module._free(transSymbolPtr);
+    Module._free(transToPtr);
+    Module._free(epsilonFromPtr);
+    Module._free(epsilonToPtr);
+
+    if (result) {
+        alert('The automata is correct!');
+    }
+    else {
+        alert('The automata is incorrect!');
+    }
+}
+
 function loadAutomata(automata) {
     states.length = 0;
     transitions.length = 0;
@@ -650,14 +739,15 @@ Module.onRuntimeInitialized = function() {
          'number', 'number', 'number', 'number',
          'number', 'number', 'number',
          'string']);
-    /*
-    int regex_vs_dfa(
-		const char* regex, int* states, int states_len, char* alphabet, int alphabet_len,
-		int start, int* accept, int accept_len, int* trans_from, char* trans_symbol, int* trans_to, trans_len)
-    */
-
     regex_vs_dfa = Module.cwrap('regex_vs_dfa', 'number',
         ['string',
+         'number', 'number', 'number',
+         'number', 'number', 'number',
+         'number', 'number', 'number',
+         'number', 'number']);
+    regex_vs_nfa = Module.cwrap('regex_vs_nfa', 'number',
+        ['string',
+         'number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number', 'number',
@@ -665,7 +755,7 @@ Module.onRuntimeInitialized = function() {
 
     // Test the function
     try {
-        const result = simulateRegex('a', 'a');
+        const result = simulateRegex('(a|b)*a(a|b)(a|b)(a|b)', 'aaaaaaabaaab');
         console.log("Test regex result:", result);
     } catch (error) {
         console.error("Error testing WebAssembly function:", error);
