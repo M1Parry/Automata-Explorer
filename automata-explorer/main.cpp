@@ -562,6 +562,16 @@ public:
 		return visited1.size() == dfa1.states.size();
 	}
 
+	int minimize_difference() {
+		if (!is_deterministic) {
+			Automaton dfa = nfa_to_dfa();
+			return dfa.minimize_difference();
+		}
+
+		Automaton minimized = minimize_dfa();
+
+		return states.size() - minimized.states.size();
+	}
 };
 
 
@@ -988,6 +998,25 @@ extern "C" {
 		}
 
 		return re.get_nfa().is_equivalent(nfa);
+	}
+
+	EMSCRIPTEN_KEEPALIVE
+	int minimized_dfa_difference(
+		int* states, int states_len, char* alphabet, int alphabet_len,
+		int start, int* accept, int accept_len, int* trans_from, char* trans_symbol, int* trans_to,
+		int trans_len) {
+
+		std::vector<int> states_vec(states, states + states_len);
+		std::vector<char> alphabet_vec(alphabet, alphabet + alphabet_len);
+		std::vector<int> accept_vec(accept, accept + accept_len);
+
+		Automaton dfa(states_vec, alphabet_vec, start, accept_vec, true);
+
+		for (int i = 0; i < trans_len; i++ ) {
+			dfa.add_dfa_transition(trans_from[i], trans_symbol[i], trans_to[i]);
+		}
+
+		return dfa.minimize_difference();
 	}
 
 	EMSCRIPTEN_KEEPALIVE
