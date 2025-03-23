@@ -19,6 +19,7 @@ let simulateRegex;
 let simulateNFA;
 let regex_vs_dfa;
 let regex_vs_nfa;
+let minimize_difference;
 
 
 class State {
@@ -111,6 +112,11 @@ function handleClick(event) {
             // Create new state only if we didn't click on an existing one
             const newState = new State(x, y, `q${states.length}`);
             states.push(newState);
+
+            // if its the first state make it initial
+            if (states.length === 1) {
+                newState.isInitial = true;
+            }
             drawCanvas();
         }
         lastClickTime = currentTime;
@@ -454,10 +460,6 @@ const addTransitionBtn = document.getElementById('addTransitionBtn');
 const deleteBtn = document.getElementById('deleteStateBtn');
 const deleteTransitionBtn = document.getElementById('deleteTransitionBtn');
 
-document.getElementById('setInitialBtn').addEventListener('click', () => {
-    // TODO: Implement state selection and setting initial state
-});
-
 addStateBtn.addEventListener('click', () => {
     resetButtons();
     isStateMode = !isStateMode;
@@ -510,6 +512,24 @@ document.getElementById('clearAutomataBtn').addEventListener('click', () => {
     drawCanvas();
 });
 
+function serializeAutomataPositions() {
+    return {
+        states: states.map(state => ({
+            stateId: state.id,
+            label: state.label,
+            x: state.x,
+            y: state.y,
+            isInitial: state.isInitial,
+            isFinal: state.isFinal
+        })),
+        transitions: transitions.map(transition => ({
+            from: transition.from.id,
+            to: transition.to.id,
+            symbol: transition.symbol
+        }))
+    };
+}
+
 function serializeAutomata() {
     let states_array = [];
     states_array = states.map(state => ({
@@ -539,7 +559,7 @@ function serializeAutomata() {
 
 async function saveAutomata() {
     try {
-        const data = serializeAutomata();
+        const data = serializeAutomataPositions();
         const problemId = document.getElementById('problem').dataset.id;
 
         const response = await fetch(`/main/answer/save/${problemId}`, {
@@ -561,6 +581,19 @@ async function saveAutomata() {
 
 function checkAutomata() {
     const problemType = document.getElementById('problemType').dataset.type;
+
+    // check if there are any states
+    if (states.length === 0) {
+        alert('No states found!');
+        return;
+    }
+
+    // check if there is a final state
+    if (states.filter(state => state.isFinal).length === 0) {
+        alert('No final states found!');
+        return;
+    }
+
     if (problemType === 'DFA') {
         checkDFA();
     }
@@ -607,8 +640,13 @@ function checkDFA() {
 
     const result = regex_vs_dfa(
         regex, statesPtr, statesArray.length, alphabetPtr, alphabetArray.length,
-        0, acceptPtr, acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length);
+        startState, acceptPtr, acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length);
 
+    const minimize_diff = minimize_difference(
+        statesPtr, statesArray.length, alphabetPtr, alphabetArray.length,
+        startState, acceptPtr, acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length);
+
+    // Free memory
     Module._free(statesPtr);
     Module._free(alphabetPtr);
     Module._free(acceptPtr);
@@ -618,6 +656,9 @@ function checkDFA() {
 
     if (result) {
         alert('The automata is correct!');
+        if (minimize_diff > 0) {
+            alert('The automata is not minimal! The minimized automata has ' + minimize_diff + ' fewer states.');
+        }
     } else {
         alert('The automata is incorrect!');
     }
@@ -748,6 +789,11 @@ Module.onRuntimeInitialized = function() {
         ['string',
          'number', 'number', 'number',
          'number', 'number', 'number',
+         'number', 'number', 'number',
+         'number', 'number', 'number',
+         'number', 'number']);
+    minimize_difference = Module.cwrap('minimized_dfa_difference', 'number',
+        ['number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number']);
