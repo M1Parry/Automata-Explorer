@@ -15,6 +15,11 @@ function updateCanvas() {
 }
 
 function loadProblem(problemId) {
+    const home = document.getElementById('home');
+    if (home) {
+        home.style.display = 'none';
+    }
+
     const problemHtml = `
         <div class="problem-view p-4" id="problem" data-id="${problemId}">
             <h3 id="problemTitle"></h3>
@@ -342,15 +347,17 @@ function updateUrl(urlPath) {
 
 function goHome() {
     document.getElementById('automataEditor').style.display = 'none';
-    document.getElementById('home').style.display = 'block';
+
+    const home = document.getElementById('home');
+    if (home) {
+        home.style.display = 'block';
+    }
 
     if (document.getElementById('editProblem')) {
         document.getElementById('editProblem').innerHTML = '';
     }
 
     document.getElementById('problemDesc').innerHTML = '';
-
-    updateUrl('/main');
 }
 
 function getActiveProblemsStats() {
