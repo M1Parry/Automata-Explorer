@@ -19,7 +19,8 @@ let simulateRegex;
 let simulateNFA;
 let regex_vs_dfa;
 let regex_vs_nfa;
-let minimize_difference;
+let minimized_dfa_difference;
+let minimized_nfa_difference;
 
 
 class State {
@@ -562,6 +563,20 @@ async function saveAutomata() {
         const data = serializeAutomataPositions();
         const problemId = document.getElementById('problem').dataset.id;
 
+        let correct_answer = false;
+
+        // check if the automata is correct
+        const problemType = document.getElementById('problemType').dataset.type;
+
+        if (problemType === 'DFA') {
+            const result = checkDFA();
+            correct_answer = result.result;
+        } else if (problemType === 'NFA') {
+            correct_answer = checkNFA();
+        }
+
+        data.isCorrect = correct_answer;
+
         const response = await fetch(`/main/answer/save/${problemId}`, {
             method: 'POST',
             headers: {
@@ -595,10 +610,25 @@ function checkAutomata() {
     }
 
     if (problemType === 'DFA') {
-        checkDFA();
+        const result = checkDFA();
+        if (result.result) {
+            alert('The automata is correct!');
+            if (result.minimize_diff > 0) {
+                alert('The minimized automata has ' + result.minimize_diff + ' fewer states');
+            }
+        }
+        else {
+            alert('The automata is incorrect!');
+        }
     }
     else if (problemType === 'NFA') {
-        checkNFA();
+        const result = checkNFA();
+        if (result) {
+            alert('The automata is correct!');
+        }
+        else {
+            alert('The automata is incorrect!');
+        }
     }
 }
 
@@ -642,7 +672,7 @@ function checkDFA() {
         regex, statesPtr, statesArray.length, alphabetPtr, alphabetArray.length,
         startState, acceptPtr, acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length);
 
-    const minimize_diff = minimize_difference(
+    const minimize_diff = minimized_dfa_difference(
         statesPtr, statesArray.length, alphabetPtr, alphabetArray.length,
         startState, acceptPtr, acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length);
 
@@ -654,14 +684,7 @@ function checkDFA() {
     Module._free(transSymbolPtr);
     Module._free(transToPtr);
 
-    if (result) {
-        alert('The automata is correct!');
-        if (minimize_diff > 0) {
-            alert('The automata is not minimal! The minimized automata has ' + minimize_diff + ' fewer states.');
-        }
-    } else {
-        alert('The automata is incorrect!');
-    }
+    return { result, minimize_diff };
 }
 
 function checkNFA() {
@@ -722,6 +745,7 @@ function checkNFA() {
         acceptArray.length, transFromPtr, transSymbolPtr, transToPtr, transFromArray.length,
         epsilonFromPtr, epsilonToPtr, epsilonFrom.length);
 
+    // Free memory
     Module._free(statesPtr);
     Module._free(alphabetPtr);
     Module._free(acceptPtr);
@@ -731,12 +755,7 @@ function checkNFA() {
     Module._free(epsilonFromPtr);
     Module._free(epsilonToPtr);
 
-    if (result) {
-        alert('The automata is correct!');
-    }
-    else {
-        alert('The automata is incorrect!');
-    }
+    return result;
 }
 
 function loadAutomata(automata) {
@@ -792,8 +811,14 @@ Module.onRuntimeInitialized = function() {
          'number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number']);
-    minimize_difference = Module.cwrap('minimized_dfa_difference', 'number',
+    minimized_dfa_difference = Module.cwrap('minimized_dfa_difference', 'number',
         ['number', 'number', 'number',
+         'number', 'number', 'number',
+         'number', 'number', 'number',
+         'number', 'number']);
+    minimized_nfa_difference = Module.cwrap('minimized_nfa_difference', 'number',
+        ['number', 'number', 'number',
+         'number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number', 'number',
          'number', 'number']);
