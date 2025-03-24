@@ -16,11 +16,11 @@ function isTeacher(req, res, next) {
 router.get('/', (req, res) => {
     // for testing only
     let teacherid = '678773aca785c93a0dfb4958'
-    let studentid = '67877374a785c93a0dfb4955'
+    // let studentid = '67877374a785c93a0dfb4955'
     req.session.user = {
-        id: studentid,
+        id: teacherid,
         username: 'teacher1',
-        userType: 'student',
+        userType: 'teacher',
         university: '67877331a785c93a0dfb494f',
         isAdmin: false
     };
@@ -187,7 +187,7 @@ router.delete('/problem/delete/:id', isTeacher, (req, res) => {
 router.post('/answer/save/:id', async (req, res) => {
     const userId = req.session.user.id;
     const problemId = req.params.id;
-    const { states, transitions } = req.body;
+    const { states, transitions, isCorrect } = req.body;
 
     let answer = await Answer.findOne({ problemId, userId });
 
@@ -195,13 +195,16 @@ router.post('/answer/save/:id', async (req, res) => {
         answer.states = states;
         answer.transitions = transitions;
         answer.attempts += 1;
+        answer.isCorrect = isCorrect
         await answer.save();
     } else {
         answer = new Answer({
             problemId,
             userId,
             states,
-            transitions
+            transitions,
+            isCorrect,
+            attempts: 1
         });
         await answer.save();
     }
@@ -211,6 +214,68 @@ router.post('/answer/save/:id', async (req, res) => {
         message: 'Answer saved successfully',
         answerId: answer._id
     });
+});
+
+router.get('/activeProblemsStats', async (req, res) => {
+    const problems = await Problem.find({ university: req.session.user.university, enabled: true });
+    const stats = [];
+
+    for (let problem of problems) {
+        const answers = await Answer.find({ problemId: problem._id });
+        const correctAnswers = answers.filter(answer => answer.isCorrect);
+        let correctPercentage = (correctAnswers.length / answers.length) * 100;
+        let averageAttempts = answers.reduce((acc, answer) => acc + answer.attempts, 0) / answers.length;
+
+        if (isNaN(correctPercentage)) {
+            correctPercentage = 0;
+        }
+
+        if (isNaN(averageAttempts)) {
+            averageAttempts = 0;
+        }
+
+        stats.push({
+            problemId: problem._id,
+            title: problem.title,
+            difficulty: problem.difficulty,
+            correctPercentage,
+            averageAttempts
+        });
+    }
+
+    res.json({ success: true, stats });
+});
+
+router.get('/expiredProblemsStats', async (req, res) => {
+    const problems = await Problem.find({ university: req.session.user.university, enabled: true });
+    const stats = [];
+
+    for (let problem of problems) {
+        if (Date.now() > problem.deadline) {
+            const answers = await Answer.find({ problemId: problem._id });
+            const correctAnswers = answers.filter(answer => answer.isCorrect);
+            let correctPercentage = (correctAnswers.length / answers.length) * 100;
+            let averageAttempts = answers.reduce((acc, answer) => acc + answer.attempts, 0) / answers.length;
+
+            if (isNaN(correctPercentage)) {
+                correctPercentage = 0;
+            }
+
+            if (isNaN(averageAttempts)) {
+                averageAttempts = 0;
+            }
+
+            stats.push({
+                problemId: problem._id,
+                title: problem.title,
+                difficulty: problem.difficulty,
+                correctPercentage,
+                averageAttempts
+            });
+        }
+    }
+
+    res.json({ success: true, stats });
 });
 
 module.exports = router;

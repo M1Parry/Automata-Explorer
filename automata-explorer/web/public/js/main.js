@@ -340,7 +340,107 @@ function updateUrl(urlPath) {
     window.history.pushState({"html":html},"", urlPath);
 }
 
+function goHome() {
+    document.getElementById('automataEditor').style.display = 'none';
+    document.getElementById('home').style.display = 'block';
+
+    if (document.getElementById('editProblem')) {
+        document.getElementById('editProblem').innerHTML = '';
+    }
+
+    document.getElementById('problemDesc').innerHTML = '';
+
+    updateUrl('/main');
+}
+
+function getActiveProblemsStats() {
+    fetch('/main/activeProblemsStats')
+    .then(response => response.json())
+    .then(data => {
+        const activeProblemList = document.getElementById('activeProblemList');
+        activeProblemList.innerHTML = '';
+
+        // create table header
+        const headerHtml = `
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Problem</th>
+                        <th scope="col">Difficulty</th>
+                        <th scope="col">Correct %</th>
+                        <th scope="col">Avg. Attempts</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+        `;
+        activeProblemList.innerHTML = headerHtml;
+
+        // create table rows
+        const tableBody = activeProblemList.querySelector('tbody');
+        data.stats.forEach(stat => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${stat.title}</td>
+                <td>${stat.difficulty}</td>
+                <td>${stat.correctPercentage}%</td>
+                <td>${stat.averageAttempts}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    });
+}
+
+function getExpiredProblemsStats() {
+    fetch('/main/expiredProblemsStats')
+    .then(response => response.json())
+    .then(data => {
+        const expiredProblemList = document.getElementById('expiredProblemList');
+        expiredProblemList.innerHTML = '';
+
+        // create table header
+        const headerHtml = `
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Problem</th>
+                        <th scope="col">Difficulty</th>
+                        <th scope="col">Correct %</th>
+                        <th scope="col">Avg. Attempts</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+        `;
+        expiredProblemList.innerHTML = headerHtml;
+
+        // create table rows
+        const tableBody = expiredProblemList.querySelector('tbody');
+        data.stats.forEach(stat => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${stat.title}</td>
+                <td>${stat.difficulty}</td>
+                <td>${stat.correctPercentage}%</td>
+                <td>${stat.averageAttempts}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    });
+}
+
+function loadHome() {
+    goHome();
+
+    getActiveProblemsStats();
+    getExpiredProblemsStats();
+
+}
+
 // on page load event, load problems
 document.addEventListener('DOMContentLoaded', function() {
     loadProblems();
+
+    const homeBtn = document.getElementById('homeBtn');
+    homeBtn.addEventListener('click', loadHome);
 });
