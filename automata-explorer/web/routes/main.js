@@ -15,8 +15,8 @@ function isTeacher(req, res, next) {
 
 router.get('/', (req, res) => {
     // for testing only
-    let teacherid = '678773aca785c93a0dfb4958'
-    // let studentid = '67877374a785c93a0dfb4955'
+    let teacherid = '678773aca785c93a0dfb4958';
+    let studentid = '67877374a785c93a0dfb4955';
     req.session.user = {
         id: teacherid,
         username: 'teacher1',
@@ -217,7 +217,11 @@ router.post('/answer/save/:id', async (req, res) => {
 });
 
 router.get('/activeProblemsStats', async (req, res) => {
-    const problems = await Problem.find({ university: req.session.user.university, enabled: true });
+    const problems = await Problem.find({
+        university: req.session.user.university,
+        enabled: true,
+        deadline: { $gt: Date.now() }
+    });
     const stats = [];
 
     for (let problem of problems) {
@@ -237,9 +241,11 @@ router.get('/activeProblemsStats', async (req, res) => {
         stats.push({
             problemId: problem._id,
             title: problem.title,
+            type: problem.type,
             difficulty: problem.difficulty,
             correctPercentage,
-            averageAttempts
+            averageAttempts,
+            deadline: problem.deadline
         });
     }
 
@@ -247,32 +253,35 @@ router.get('/activeProblemsStats', async (req, res) => {
 });
 
 router.get('/expiredProblemsStats', async (req, res) => {
-    const problems = await Problem.find({ university: req.session.user.university, enabled: true });
+    const problems = await Problem.find({
+        university: req.session.user.university,
+        enabled: true,
+        deadline: { $lt: Date.now() }
+    });
     const stats = [];
 
     for (let problem of problems) {
-        if (Date.now() > problem.deadline) {
-            const answers = await Answer.find({ problemId: problem._id });
-            const correctAnswers = answers.filter(answer => answer.isCorrect);
-            let correctPercentage = (correctAnswers.length / answers.length) * 100;
-            let averageAttempts = answers.reduce((acc, answer) => acc + answer.attempts, 0) / answers.length;
+        const answers = await Answer.find({ problemId: problem._id });
+        const correctAnswers = answers.filter(answer => answer.isCorrect);
+        let correctPercentage = (correctAnswers.length / answers.length) * 100;
+        let averageAttempts = answers.reduce((acc, answer) => acc + answer.attempts, 0) / answers.length;
 
-            if (isNaN(correctPercentage)) {
-                correctPercentage = 0;
-            }
-
-            if (isNaN(averageAttempts)) {
-                averageAttempts = 0;
-            }
-
-            stats.push({
-                problemId: problem._id,
-                title: problem.title,
-                difficulty: problem.difficulty,
-                correctPercentage,
-                averageAttempts
-            });
+        if (isNaN(correctPercentage)) {
+            correctPercentage = 0;
         }
+
+        if (isNaN(averageAttempts)) {
+            averageAttempts = 0;
+        }
+
+        stats.push({
+            problemId: problem._id,
+            title: problem.title,
+            type: problem.type,
+            difficulty: problem.difficulty,
+            correctPercentage,
+            averageAttempts
+        });
     }
 
     res.json({ success: true, stats });

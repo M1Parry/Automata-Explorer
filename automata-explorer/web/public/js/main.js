@@ -14,6 +14,17 @@ function updateCanvas() {
     canvas.height = container.clientHeight;
 }
 
+function format_datetime(date) {
+    // format as dd/mm/yyyy hh:mm
+    let d = new Date(date);
+    let day = d.getDate();
+    let month = d.getMonth() + 1;
+    let year = d.getFullYear();
+    let hours = d.getHours();
+    let minutes = d.getMinutes();
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
 function loadProblem(problemId) {
     const home = document.getElementById('home');
     if (home) {
@@ -373,7 +384,9 @@ function getActiveProblemsStats() {
                 <thead>
                     <tr>
                         <th scope="col">Problem</th>
+                        <th scope="col">Type</th>
                         <th scope="col">Difficulty</th>
+                        <th scope="col">Deadline</th>
                         <th scope="col">Correct %</th>
                         <th scope="col">Avg. Attempts</th>
                     </tr>
@@ -389,7 +402,9 @@ function getActiveProblemsStats() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${stat.title}</td>
+                <td>${stat.type}</td>
                 <td>${stat.difficulty}</td>
+                <td>${format_datetime(stat.deadline)}</td>
                 <td>${stat.correctPercentage}%</td>
                 <td>${stat.averageAttempts}</td>
             `;
@@ -411,6 +426,7 @@ function getExpiredProblemsStats() {
                 <thead>
                     <tr>
                         <th scope="col">Problem</th>
+                        <th scope="col">Type</th>
                         <th scope="col">Difficulty</th>
                         <th scope="col">Correct %</th>
                         <th scope="col">Avg. Attempts</th>
@@ -427,6 +443,7 @@ function getExpiredProblemsStats() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${stat.title}</td>
+                <td>${stat.type}</td>
                 <td>${stat.difficulty}</td>
                 <td>${stat.correctPercentage}%</td>
                 <td>${stat.averageAttempts}</td>
