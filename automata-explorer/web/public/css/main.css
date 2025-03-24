@@ -2,6 +2,11 @@
     overflow:auto;
 }
 
+.navbar #homeBtn {
+    background-color: transparent;
+    border: none;
+}
+
 .sidebar-container {
     display: flex;
     float: left;
@@ -19,6 +24,10 @@
     display: flex;
     flex: 1;
     padding: 20px;
+}
+
+#home table {
+    font-size: 14px;
 }
 
 @media (max-width: 768px) {
