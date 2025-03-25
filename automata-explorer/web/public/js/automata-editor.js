@@ -1,3 +1,5 @@
+const epsilon = 'ε';
+
 // State configuration
 const STATE_RADIUS = 25;
 
@@ -9,6 +11,7 @@ let isStateMode = false;
 let transitionStart = null;
 const transitions = [];
 let isTransitionMode = false;
+let isEpsTransitionMode = false;
 
 // flags
 let isDeleteStateMode = false;
@@ -131,6 +134,13 @@ function handleClick(event) {
         return;
     }
 
+    else if (isEpsTransitionMode) {
+        if (clickedState) {
+            createTransition(clickedState);
+        }
+        return;
+    }
+
     else if (isDeleteStateMode) {
         deleteState(clickedState);
         return;
@@ -172,7 +182,12 @@ function createTransition(clickedState) {
         drawState(transitionStart);
     } else {
         // Create transition
-        const symbol = prompt('Enter transition symbol:', '0');
+        let symbol;
+        if (isEpsTransitionMode) {
+            symbol = epsilon;
+        } else {
+            symbol = prompt('Enter transition symbol:', '0');
+        }
         if (symbol) {
             // check if transition already exists if it does remove the old one
             let oldTransition = transitions.find(t => t.from === transitionStart && t.to === clickedState);
@@ -192,7 +207,9 @@ function createTransition(clickedState) {
             transitions.push(new Transition(transitionStart, clickedState, symbol));
             transitionStart = null;
             isTransitionMode = false;
+            isEpsTransitionMode = false;
             document.getElementById('addTransitionBtn').classList.remove('active');
+            document.getElementById('addEpsTransitionBtn').classList.remove('active');
             drawCanvas();
         }
     }
@@ -436,10 +453,12 @@ function initCanvas() {
 function resetButtons() {
     isStateMode = false;
     isTransitionMode = false;
+    isEpsTransitionMode = false;
     isDeleteStateMode = false;
     isDeleteTransitionMode = false;
     document.getElementById('addStateBtn').classList.remove('active');
     document.getElementById('addTransitionBtn').classList.remove('active');
+    document.getElementById('addEpsTransitionBtn').classList.remove('active');
     document.getElementById('deleteStateBtn').classList.remove('active');
     document.getElementById('deleteTransitionBtn').classList.remove('active');
 }
@@ -458,6 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Handle button events
 const addStateBtn = document.getElementById('addStateBtn');
 const addTransitionBtn = document.getElementById('addTransitionBtn');
+const addEpsTransitionBtn = document.getElementById('addEpsTransitionBtn');
 const deleteBtn = document.getElementById('deleteStateBtn');
 const deleteTransitionBtn = document.getElementById('deleteTransitionBtn');
 
@@ -480,6 +500,19 @@ addTransitionBtn.addEventListener('click', () => {
         addTransitionBtn.classList.add('active');
     } else {
         addTransitionBtn.classList.remove('active');
+    }
+    drawCanvas();
+});
+
+// Add epsilon transition button handler
+addEpsTransitionBtn.addEventListener('click', () => {
+    resetButtons();
+    isEpsTransitionMode = !isEpsTransitionMode;
+    transitionStart = null;
+    if (isEpsTransitionMode) {
+        addEpsTransitionBtn.classList.add('active');
+    } else {
+        addEpsTransitionBtn.classList.remove('active');
     }
     drawCanvas();
 });
@@ -707,8 +740,8 @@ function checkNFA() {
     const transSymbolArray = new Uint8Array(automata.transitions.map(transition => transition.symbol.charCodeAt(0)));
     const transToArray = new Int32Array(automata.transitions.map(transition => transition.to));
 
-    const epsilonFrom = new Int32Array([]);
-    const epsilonTo = new Int32Array([]);
+    const epsilonFrom = new Int32Array(automata.transitions.filter(transition => transition.symbol === epsilon).map(transition => transition.from));
+    const epsilonTo = new Int32Array(automata.transitions.filter(transition => transition.symbol === epsilon).map(transition => transition.to));
 
     // Allocate memory for all arrays
     const statesPtr = Module._malloc(statesArray.length * statesArray.BYTES_PER_ELEMENT);
@@ -790,7 +823,6 @@ window.State = State;
 window.Transition = Transition;
 
 Module.onRuntimeInitialized = function() {
-    console.log("WebAssembly module initialized");
     simulateRegex = Module.cwrap('simulate_regex', 'number', ['string', 'string']);
     simulateNFA = Module.cwrap('simulate_nfa', 'number',
         ['number', 'number', 'number', 'number',
