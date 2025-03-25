@@ -18,9 +18,9 @@ router.get('/', (req, res) => {
     let teacherid = '678773aca785c93a0dfb4958';
     let studentid = '67877374a785c93a0dfb4955';
     req.session.user = {
-        id: teacherid,
+        id: studentid,
         username: 'teacher1',
-        userType: 'teacher',
+        userType: 'student',
         university: '67877331a785c93a0dfb494f',
         isAdmin: false
     };
@@ -285,6 +285,33 @@ router.get('/expiredProblemsStats', async (req, res) => {
     }
 
     res.json({ success: true, stats });
+});
+
+router.get('/studentProblems', async (req, res) => {
+    const userId = req.session.user.id;
+    const problems = await Problem.find({ university: req.session.user.university, enabled: true });
+    const answers = await Answer
+        .find({ userId })
+        .populate('problemId', 'title type difficulty deadline');
+
+    const completed = answers.map(answer => answer.problemId);
+
+    // Temp fix
+    // check if there's nulls in completed, and remove 
+    // them to avoid errors
+    for (let i = 0; i < completed.length; i++) {
+        if (completed[i] === null) {
+            completed.splice(i, 1);
+        }
+    }
+
+    const incomplete = problems.filter(problem => !completed.includes(problem._id));
+
+    res.json({ success: true, completed, incomplete });
+});
+
+router.get('/userType', (req, res) => {
+    res.json({ success: true, userType: req.session.user.userType });
 });
 
 module.exports = router;

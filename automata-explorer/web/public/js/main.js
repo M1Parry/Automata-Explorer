@@ -22,6 +22,10 @@ function format_datetime(date) {
     let year = d.getFullYear();
     let hours = d.getHours();
     let minutes = d.getMinutes();
+    if (day < 10) day = '0' + day;
+    if (month < 10) month = '0' + month;
+    if (hours < 10) hours = '0' + hours;
+    if (minutes < 10) minutes = '0' + minutes;
     return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
@@ -58,7 +62,7 @@ function loadProblem(problemId) {
             document.getElementById('problemRegex').innerText = problem.regex;
             document.getElementById('problemType').innerText = problem.type;
             document.getElementById('problemType').dataset.type = problem.type;
-            document.getElementById('problemDeadline').innerText = problem.deadline ? new Date(problem.deadline).toLocaleString() : 'None';
+            document.getElementById('problemDeadline').innerText = problem.deadline ? format_datetime(problem.deadline) : '';
             document.getElementById('problemDifficulty').innerText = problem.difficulty;
 
             loadAutomata(data.answer);
@@ -453,12 +457,57 @@ function getExpiredProblemsStats() {
     });
 }
 
+function getStudentProblems() {
+    fetch('/main/studentProblems')
+    .then(response => response.json())
+    .then(data => {
+        const completedProblems = data.completed;
+        const incompleteProblems = data.incomplete;
+        console.log("completedProblems: ", completedProblems);
+        console.log("incompleteProblems: ", incompleteProblems);
+
+        let completedHtml = completedProblems.map(problem => `
+            <span>
+            <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}</a>
+            </span>
+        `).join('');
+
+        let incompleteHtml = incompleteProblems.map(problem => `
+            <span>
+            <a href="/main/problem/${problem.id}" class="list-group-item list-group-item-action">${problem.title}</a>
+            </span>
+        `).join('');
+
+        document.getElementById('completedProblemList').innerHTML = completedHtml;
+        document.getElementById('notCompletedProblemList').innerHTML = incompleteHtml;
+
+        document.querySelectorAll('.list-group-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                let problemId = item.href.split('/').pop();
+                loadProblem(problemId);
+            });
+        });
+    });
+}
+
 function loadHome() {
     goHome();
 
-    getActiveProblemsStats();
-    getExpiredProblemsStats();
-
+    // get /main/userType to determine if user is student or teacher
+    fetch('/main/userType')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const userType = data.userType;
+            if (userType === 'student') {
+                getStudentProblems();
+            } else {
+                getActiveProblemsStats();
+                getExpiredProblemsStats();
+            }
+        }
+    });
 }
 
 // on page load event, load problems
