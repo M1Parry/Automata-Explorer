@@ -10,9 +10,11 @@
   "license": "ISC",
   "dependencies": {
     "@maxgraph/core": "^0.14.0",
+    "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
+    "llamaai": "^1.0.4",
     "mongoose": "^8.9.3"
   }
 }
