@@ -86,6 +86,11 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <
+                            </h2>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -98,7 +103,32 @@
             </button>
             <!-- Main content area -->
             <div class="container">
-                <!-- <h2>Welcome to Automata Explorer, Student</h2> -->
+                <h2>Welcome to Automata Explorer, Student</h2>
+                <div id="home" class="mt-4">
+                    <div class="row">
+                        <div id="todoProblems" class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">To-Do Problems</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush" id="notCompletedProblemList"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="completedProblems" class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Completed Problems</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush" id="completedProblemList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card mt-4" id="automataEditor" style="display: none;">
                     <div id="problemDesc"></div>
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -121,6 +151,7 @@
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-outline-secondary" id="addStateBtn">Add State</button>
                                     <button class="btn btn-sm btn-outline-secondary" id="addTransitionBtn">Add Transition</button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="addEpsTransitionBtn">Add Epsilon Transition</button>
                                     <button class="btn btn-sm btn-outline-secondary" id="deleteStateBtn">Delete State</button>
                                     <button class="btn btn-sm btn-outline-secondary" id="deleteTransitionBtn">Delete Transition</button>
                                 </div>
