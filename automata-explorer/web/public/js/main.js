@@ -141,37 +141,6 @@ function loadProblems() {
     })
 }
 
-function createWithAI() {
-    const type = document.getElementById('problemType').value;
-    // Show loading state
-    const aiButton = document.querySelector('.modal-footer .btn-info');
-    const originalText = aiButton.innerHTML;
-    aiButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
-    aiButton.disabled = true;
-
-    fetch('/api/generate-problem', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: type })
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('problemTitle').value = data.title || '';
-        document.getElementById('problemDescription').value = data.description || '';
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to generate problem with AI');
-    })
-    .finally(() => {
-        // Restore button state
-        aiButton.innerHTML = originalText;
-        aiButton.disabled = false;
-    });
-}
-
 function createProblem() {
     const form = document.getElementById('createProblemForm');
     if (form.checkValidity()) {
@@ -384,7 +353,7 @@ function getActiveProblemsStats() {
 
         // create table header
         const headerHtml = `
-            <table class="table table-striped">
+            <table class="table table-striped problem-stats">
                 <thead>
                     <tr>
                         <th scope="col">Problem</th>
@@ -412,6 +381,10 @@ function getActiveProblemsStats() {
                 <td>${stat.correctPercentage}%</td>
                 <td>${stat.averageAttempts}</td>
             `;
+            row.addEventListener('click', function() {
+                
+            });
+
             tableBody.appendChild(row);
         });
     });
@@ -463,8 +436,6 @@ function getStudentProblems() {
     .then(data => {
         const completedProblems = data.completed;
         const incompleteProblems = data.incomplete;
-        console.log("completedProblems: ", completedProblems);
-        console.log("incompleteProblems: ", incompleteProblems);
 
         let completedHtml = completedProblems.map(problem => `
             <span>
@@ -510,10 +481,50 @@ function loadHome() {
     });
 }
 
+function aiProblem() {
+    const home = document.getElementById('home');
+    if (home) {
+        home.style.display = 'none';
+    }
+
+    // show automata editor
+    document.getElementById('automataEditor').style.display = 'block';
+    const problemHtml = `
+        <div class="problem-view p-4" id="problem">
+            <h3 id="problemTitle">AI Generated Problem</h3>
+            <div class="d-flex justify-content-between">
+                <p><strong>Regex:</strong> <span id="problemRegex"></span></p>
+                <p style='display:none;'><strong>Type:</strong> <span id="problemType">NFA</span></p>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('problemRegex').innerText = 'Loading...';
+    document.getElementById('problemType').dataset.type = 'NFA';
+    document.getElementById('problemDesc').innerHTML = problemHtml;
+
+    // get fetch generateRegex
+    fetch('/main/generateRegex')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('problemRegex').innerText = data.regexPattern;
+
+            // Clear existing states and transitions
+            states.length = 0;
+            transitions.length = 0;
+            stateCounter = 0;
+
+            updateCanvas();
+        }
+    });
+}
+
 // on page load event, load problems
 document.addEventListener('DOMContentLoaded', function() {
     loadProblems();
-
+    loadHome();
     const homeBtn = document.getElementById('homeBtn');
     homeBtn.addEventListener('click', loadHome);
+    document.getElementById('aiProblem').addEventListener('click', aiProblem);
 });
