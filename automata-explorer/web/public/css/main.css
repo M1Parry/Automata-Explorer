@@ -20,6 +20,16 @@
     transition: all 0.3s;
 }
 
+.problem-stats { cursor: pointer; }
+
+
+#aiProblem {
+    border: none;
+    background-color: transparent;
+    color: var(--bs-accordion-btn-color);
+    padding: 1rem;
+}
+
 .content {
     display: flex;
     flex: 1;
