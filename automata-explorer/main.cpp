@@ -172,20 +172,6 @@ public:
 		contains_epsilon = true;
 	}
 
-	bool check_transitions()
-	{
-		if (is_deterministic) {
-			for (int state : states) {
-				for (char symbol : alphabet) {
-					if (dfa_transitions[state].find(symbol) == dfa_transitions[state].end()) {
-						return false;
-					}
-				}
-			}
-		}
-		return true; // All transitions are valid
-	}
-
 	std::string get_alphabet()
 	{
 		std::string alphabet_str;
@@ -393,6 +379,7 @@ public:
 		std::set<int> accepting_states;
 		std::set<int> non_accepting_states;
 
+		// first partition into accepting and non-accepting states
 		for (int state : states) {
 			if (reachable.find(state) != reachable.end()) {
 				if (is_accepting_state(state)) {
@@ -410,6 +397,7 @@ public:
 			partition.push_back(non_accepting_states);
 		}
 
+		// Refine partition
 		bool changed = true;
 		while (changed) {
 			changed = false;
@@ -421,6 +409,7 @@ public:
 					continue;
 				}
 
+				// Create a map to group states by their transition signatures
 				std::map<std::vector<int>, std::set<int>> subgroups;
 				for (int state : group) {
 					std::vector<int> signature;
@@ -476,10 +465,14 @@ public:
 
 		minimized.set_start(state_to_group[start]);
 
+		std::set<int> minimized_accept_set;
 		for (int state : accept) {
 			if (reachable.find(state) != reachable.end()) {
-				minimized.add_accept(state_to_group[state]);
+				minimized_accept_set.insert(state_to_group[state]);
 			}
+		}
+		for (int accept_state : minimized_accept_set) {
+			minimized.add_accept(accept_state);
 		}
 
 		// Add transitions
@@ -751,151 +744,6 @@ public:
 
 };
 
-
-void simulate_dfa_test()
-{
-	std::vector<char> alphabet{'a', 'b'};
-	std::vector<int> states = {0, 1, 2};
-	int start = 0;
-	std::vector<int> accept = {2};
-
-	// this automaton accepts the language that contains 'ab'
-	Dfa_transitions transitions = {
-		{0, {{'a', 1}, {'b', 0}}},
-		{1, {{'a', 1}, {'b', 2}}},
-		{2, {{'a', 2}, {'b', 2}}}
-	};
-
-	Automaton automaton(states, alphabet, start, accept, true);
-
-	for (auto transition : transitions) {
-		for (auto t : transition.second) {
-			automaton.add_dfa_transition(transition.first, t.first, t.second);
-		}
-	}
-
-	std::string input = "ab";
-	std::cout << "DFA on input string: " << input << ". Result: ";
-	std::cout << automaton.accepts(input) << std::endl;
-}
-
-void simulate_nfa_test()
-{
-	std::vector<char> alphabet{'0', '1'};
-	std::vector<int> states = {0, 1, 2, 3};
-	int start = 0;
-	std::vector<int> accept = {3};
-
-	Nfa_transitions transitions = {
-		{0, {{'0', {0}}, {'1', {0, 1}}}},
-		{1, {{'0', {2}}, {'1', {2}}}},
-		{2, {{'0', {3}}, {'1', {3}}}}
-	};
-
-	// Accepts all strings over {0, 1} containing a 1 in the third position from the end
-	Automaton nfa(states, alphabet, start, accept, false);
-
-	// add transitions
-	for (auto transition : transitions) {
-		for (auto t : transition.second) {
-			for (int state : t.second) {
-				nfa.add_nfa_transition(transition.first, t.first, state);
-			}
-		}
-	}
-
-	std::string input = "000100";
-	std::string fail = "0001000";
-
-	std::cout << "NFA on input string: " << input << ". Result: ";
-	std::cout << nfa.accepts(input) << std::endl;
-
-	std::cout << "NFA on input string: " << fail << ". Result: ";
-	std::cout << nfa.accepts(fail) << std::endl;
-
-	Automaton dfa = nfa.nfa_to_dfa();
-	std::cout << "NFA -> DFA. Input string: " << input << ". Result: ";
-	std::cout << dfa.accepts(input) << std::endl;
-
-	std::cout << "NFA -> DFA. Input string: " << fail << ". Result: ";
-	std::cout << dfa.accepts(fail) << std::endl;
-}
-
-void simulate_epsilon_nfa_test()
-{
-}
-
-void simulate_regex_test() {
-	std::string regex = "(a|b)a+";
-
-	RegularExpression re(regex);
-	std::string postfix = re.postfix_expression();
-	std::cout << "Regex expression: " << regex << std::endl;
-	std::cout << "Postfix expression: " << postfix << std::endl;
-	Automaton nfa = re.get_nfa();
-
-	std::string input = "aa";
-
-	std::cout << "NFA on input string: " << input << ". Result: ";
-	std::cout << nfa.accepts(input) << std::endl;
-}
-
-void test_is_equivalent() {
-	// example from https://www.geeksforgeeks.org/equivalence-of-f-s-a-finite-state-automata/
-	std::vector<char> alphabet = {'c', 'd'};
-	std::vector<int> dfa1_states = {0, 1, 2};
-	std::vector<int> dfa2_states = {0, 1, 2, 3};
-	int start = 0;
-	std::vector<int> accept = {0};
-
-	// dfa1
-	Automaton dfa1(dfa1_states, alphabet, start, accept, true);
-	dfa1.add_dfa_transition(0, 'c', 0);
-	dfa1.add_dfa_transition(0, 'd', 1);
-	dfa1.add_dfa_transition(1, 'c', 2);
-	dfa1.add_dfa_transition(1, 'd', 0);
-	dfa1.add_dfa_transition(2, 'c', 1);
-	dfa1.add_dfa_transition(2, 'd', 2);
-
-	// dfa2
-	Automaton dfa2(dfa2_states, alphabet, start, accept, true);
-	dfa2.add_dfa_transition(0, 'c', 0);
-	dfa2.add_dfa_transition(0, 'd', 1);
-	dfa2.add_dfa_transition(1, 'c', 2);
-	dfa2.add_dfa_transition(1, 'd', 0);
-	dfa2.add_dfa_transition(2, 'c', 3);
-	dfa2.add_dfa_transition(2, 'd', 2);
-	dfa2.add_dfa_transition(3, 'c', 2);
-	dfa2.add_dfa_transition(3, 'd', 0);
-
-	// std::cout << "DFA1 is equivalent to DFA2: " << dfa1.is_equivalent(dfa2) << std::endl;
-
-	// comparing regex with dfa
-	std::string regex = "b*ab";
-
-	RegularExpression re1(regex);
-
-	std::vector<char> alphabet1 = {'a', 'b'};
-	std::vector<int> states = {0, 1, 2};
-	start = 0;
-	accept = {2};
-
-	Automaton dfa(states, alphabet1, start, accept, true);
-	dfa.add_dfa_transition(0, 'a', 1);
-	dfa.add_dfa_transition(0, 'b', 0);
-	dfa.add_dfa_transition(1, 'b', 2);
-	std::cout << "dfa accepts 'ab': " << dfa.accepts("ab") << std::endl;
-	dfa.print_transitions();
-
-	// minimize dfa to test
-	Automaton minimized_dfa = dfa.minimize_dfa();
-	std::cout << "minimized_dfa accepts 'ab': " << minimized_dfa.accepts("ab") << std::endl;
-
-	std::cout << std::endl;
-
-	std::cout << "Regex is equivalent to DFA: " << std::endl;
-	std::cout << re1.get_dfa().is_equivalent(dfa) << std::endl;
-}
 
 int main(int argc, char *argv[])
 {
