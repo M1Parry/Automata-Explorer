@@ -14,22 +14,10 @@ function isTeacher(req, res, next) {
 }
 
 router.get('/', (req, res) => {
-    // for testing only
-    let teacherid = '678773aca785c93a0dfb4958';
-    let studentid = '67877374a785c93a0dfb4955';
-    req.session.user = {
-        id: studentid,
-        username: 'teacher1',
-        userType: 'student',
-        university: '67877331a785c93a0dfb494f',
-        isAdmin: false
-    };
-    // end of testing
-
     // uncomment for production
-    // if (!req.session.user) {
-    //     res.redirect('/auth/login');
-    // }
+    if (!req.session.user) {
+        return res.redirect('/auth/login');
+    }
 
     if (req.session.user.userType === 'teacher') {
         res.sendFile(path.join(__dirname, '../public/html/teacher.html'));
@@ -183,6 +171,34 @@ router.delete('/problem/delete/:id', isTeacher, (req, res) => {
         });
 });
 
+// Problem stats for teacher that shows a list of students and whether they have completed the problem
+router.get('/problem/stats/:id', isTeacher, async (req, res) => {
+    const { id } = req.params;
+    const problem = await Problem
+        .findById(id)
+        .populate('creator', 'username');
+
+    if (!problem) {
+        return res.status(404).json({ success: false, message: 'Problem not found' });
+    }
+
+    const answers = await Answer
+        .find({ problemId: id })
+        .populate('userId', 'username');
+
+    const stats = answers.map(answer => {
+        return {
+            student: answer.userId.username,
+            isCorrect: answer.isCorrect,
+            attempts: answer.attempts
+        }
+    });
+
+    res.json({ success: true, problem, stats });
+});
+
+
+
 // Save answer
 router.post('/answer/save/:id', async (req, res) => {
     const userId = req.session.user.id;
@@ -296,22 +312,29 @@ router.get('/studentProblems', async (req, res) => {
 
     const completed = answers.map(answer => answer.problemId);
 
-    // Temp fix
-    // check if there's nulls in completed, and remove 
-    // them to avoid errors
     for (let i = 0; i < completed.length; i++) {
         if (completed[i] === null) {
             completed.splice(i, 1);
         }
     }
 
-    const incomplete = problems.filter(problem => !completed.includes(problem._id));
+    const incomplete = problems.filter(problem => {
+        return !completed.some(comp => comp._id.toString() === problem._id.toString());
+    });
 
     res.json({ success: true, completed, incomplete });
 });
 
 router.get('/userType', (req, res) => {
     res.json({ success: true, userType: req.session.user.userType });
+});
+
+// import llama-api.js
+const { generateRegex } = require('../llama-api');
+
+router.get('/generateRegex', async (req, res) => {
+    const response = await generateRegex();
+    res.json(response);
 });
 
 module.exports = router;
