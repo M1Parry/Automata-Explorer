@@ -30,10 +30,19 @@ function format_datetime(date) {
 }
 
 function loadProblem(problemId) {
+    states.length = 0;
+    transitions.length = 0;
+    stateCounter = 0;
+
+
     const home = document.getElementById('home');
-    if (home) {
-        home.style.display = 'none';
-    }
+    if (home) home.style.display = 'none';
+
+    const problemStats = document.getElementById('problemStats');
+    if (problemStats) problemStats.style.display = 'none';
+
+    const editor = document.getElementById('editProblem');
+    if (editor) editor.innerHTML = '';
 
     const problemHtml = `
         <div class="problem-view p-4" id="problem" data-id="${problemId}">
@@ -178,6 +187,13 @@ function createProblem() {
 }
 
 function loadProblemEditor(problemId) {
+    // hide home view
+    const home = document.getElementById('home');
+    if (home) home.style.display = 'none';
+
+    const problemStats = document.getElementById('problemStats');
+    if (problemStats) problemStats.style.display = 'none';
+
     const editorHtml = `
         <div class="problem-editor p-4">
             <h3>Edit Problem</h3>
@@ -331,6 +347,8 @@ function updateUrl(urlPath) {
 
 function goHome() {
     document.getElementById('automataEditor').style.display = 'none';
+    const problemStats = document.getElementById('problemStats');
+    if (problemStats) problemStats.style.display = 'none';
 
     const home = document.getElementById('home');
     if (home) {
@@ -343,6 +361,62 @@ function goHome() {
 
     document.getElementById('problemDesc').innerHTML = '';
 }
+
+function loadProblemStats(problemId) {
+    // hide home view
+    const home = document.getElementById('home');
+    home.style.display = 'none';
+
+    // show problem stats view problemStats div
+    const problemStats = document.getElementById('problemStats');
+    if (problemStats) problemStats.style.display = 'block';
+
+    fetch(`/main/problem/stats/${problemId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const problem = data.problem;
+            const stats = data.stats;
+
+            // put in card
+            const statsHtml = `
+                <div class="problem-stats p-4">
+                    <h3>${problem.title}</h3> 
+                    <p><strong>Description:</strong> ${problem.description}</p>
+                    <p><strong>Regex:</strong> ${problem.regex}</p>
+                    <p><strong>Type:</strong> ${problem.type}</p>
+                    <p><strong>Difficulty:</strong> ${problem.difficulty}</p>
+                    <p><strong>Deadline:</strong> ${problem.deadline ? format_datetime(problem.deadline) : ''}</p>
+                </div>
+            `;
+
+            const statsTable = document.createElement('table');
+            statsTable.classList.add('table', 'table-striped', 'problem-stats');
+            statsTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th scope="col">Student</th>
+                        <th scope="col">Correct</th>
+                        <th scope="col">Attempts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                ${stats.map(stat => `
+                    <tr>
+                        <td>${stat.student}</td>
+                        <td>${stat.isCorrect ? 'Yes' : 'No'}</td>
+                        <td>${stat.attempts}</td>
+                    </tr>
+                `).join('')}
+                </tbody>
+            `;
+
+            problemStats.innerHTML = statsHtml;
+            problemStats.appendChild(statsTable);
+        }
+    });
+}
+
 
 function getActiveProblemsStats() {
     fetch('/main/activeProblemsStats')
@@ -382,7 +456,7 @@ function getActiveProblemsStats() {
                 <td>${stat.averageAttempts}</td>
             `;
             row.addEventListener('click', function() {
-                
+                loadProblemStats(stat.problemId);
             });
 
             tableBody.appendChild(row);
@@ -425,6 +499,9 @@ function getExpiredProblemsStats() {
                 <td>${stat.correctPercentage}%</td>
                 <td>${stat.averageAttempts}</td>
             `;
+            row.addEventListener('click', function() {
+                loadProblemStats(stat.problemId);
+            });
             tableBody.appendChild(row);
         });
     });
@@ -499,9 +576,9 @@ function aiProblem() {
         </div>
     `;
 
+    document.getElementById('problemDesc').innerHTML = problemHtml;
     document.getElementById('problemRegex').innerText = 'Loading...';
     document.getElementById('problemType').dataset.type = 'NFA';
-    document.getElementById('problemDesc').innerHTML = problemHtml;
 
     // get fetch generateRegex
     fetch('/main/generateRegex')
