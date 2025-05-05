@@ -1,1 +1,1 @@
-Playing around with Automata theory
+Playing around with Automata theory and WebAssembly
